@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.2.0] - 2024-07-13
+### :sparkles: New Features
+- [`475817f`](https://github.com/mole-squad/soq-tui/commit/475817f5f45cf99c3783563f43a9c166ab68a7b7) - add version to ci *(commit by [@burkel24](https://github.com/burkel24))*
+
+### :wrench: Chores
+- [`4188d71`](https://github.com/mole-squad/soq-tui/commit/4188d711132fddbfd894c62c2195cd06ac5c3ca7) - remove bin *(commit by [@burkel24](https://github.com/burkel24))*
+
+
 ## [v0.1.0] - 2024-07-13
 ### :sparkles: New Features
 - [`289fe16`](https://github.com/mole-squad/soq-tui/commit/289fe16297887d7ca237db702b7ed4f925f72020) - upload binary to release *(commit by [@burkel24](https://github.com/burkel24))*
@@ -21,3 +29,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [`26ce113`](https://github.com/mole-squad/soq-tui/commit/26ce11326c3416b8b78323d98edb40d03e4d6288) - reset *(commit by [@burkel24](https://github.com/burkel24))*
 
 [v0.1.0]: https://github.com/mole-squad/soq-tui/compare/v0.0.0...v0.1.0
+[v0.2.0]: https://github.com/mole-squad/soq-tui/compare/v0.1.0...v0.2.0
