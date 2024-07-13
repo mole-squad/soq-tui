@@ -68,7 +68,7 @@ jobs:
     - name: Upload Artifact
       uses: actions/upload-artifact@v4
       with:
-        name: binary
+        name: soq
         path: bin/tui
 
 
@@ -89,7 +89,7 @@ jobs:
       - name: Download a single artifact
         uses: actions/download-artifact@v4
         with:
-          name: binary
+          name: soq
 
       - name: Update CHANGELOG
         id: changelog
@@ -108,8 +108,7 @@ jobs:
           name: ${{ needs.tag.outputs.tag }}
           body: ${{ steps.changelog.outputs.changes }}
           token: ${{ github.token }}
-          artifacts:
-            - binary
+          artifacts: "soq"
 
       - name: Commit CHANGELOG.md
         uses: stefanzweifel/git-auto-commit-action@v5.0.1
