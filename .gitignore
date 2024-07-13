@@ -24,3 +24,5 @@ go.work.sum
 .task/
 
 *.log
+
+bin/
