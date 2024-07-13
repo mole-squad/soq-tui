@@ -87,6 +87,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Download a single artifact
+        id: download
         uses: actions/download-artifact@v4
         with:
           name: soq
@@ -108,7 +109,7 @@ jobs:
           name: ${{ needs.tag.outputs.tag }}
           body: ${{ steps.changelog.outputs.changes }}
           token: ${{ github.token }}
-          artifacts: "soq"
+          artifacts: ${{ steps.download.outputs.download-path }}
 
       - name: Commit CHANGELOG.md
         uses: stefanzweifel/git-auto-commit-action@v5.0.1
