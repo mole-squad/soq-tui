@@ -1,7 +1,5 @@
 # soq-tui
 
-## Setup
-
 # Setup
 
 Install Taskfile
