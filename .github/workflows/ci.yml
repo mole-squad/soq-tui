@@ -6,6 +6,9 @@ on:
   pull_request:
     branches: [ "main" ]
 
+env:
+  GOPRIVATE: "github.com/mole-squad/*"
+
 jobs:
 
   build:
@@ -21,6 +24,9 @@ jobs:
 
     - name: Setup go-task
       uses: pnorton5432/setup-task@v1
+
+    - name: Configure git for private packages
+      run: git config --global url.git@github.com:.insteadOf https://github.com/
 
     - name: Build
       run: task build
