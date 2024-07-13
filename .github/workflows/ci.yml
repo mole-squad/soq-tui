@@ -30,7 +30,7 @@ jobs:
         git config --global url.git@github.com:.insteadOf https://github.com/
 
         eval `ssh-agent -s`
-        ssh-add - <<< '${{ secrets.SOQ_API_DEPLOY_KEY }}''
+        ssh-add - <<< '${{ secrets.SOQ_API_DEPLOY_KEY }}'
 
     - name: Build
       run: task build
