@@ -24,16 +24,19 @@ jobs:
           token: ${{ github.token }}
           branch: main
 
-      - name: Create Tag
+      - name: Update version.txt
         if: steps.semver.outputs.bump != 'none'
-        run: |
-          git config --global user.email "ci@tennyson.io"
-          git config --global user.name "Github Actions"
+        run: echo ${{ steps.semver.outputs.next }} > version.txt
 
-          git remote add other https://${{ secrets.GITHUB_TOKEN }}@github.com/mole-squad/soq-tui.git
+      - name: Commit version.txt
+        if: steps.semver.outputs.bump != 'none'
+        uses: stefanzweifel/git-auto-commit-action@v5.0.1
+        with:
+          branch: main
+          commit_message: 'docs: ${{ steps.semver.outputs.next }} [skip ci]'
+          file_pattern: version.txt
+          tagging_message: ${{ steps.semver.outputs.next }}
 
-          git tag -a ${{ steps.semver.outputs.next }} -m "${{ steps.semver.outputs.next }}"
-          git push other --tags
   build:
     runs-on: ubuntu-latest
 
@@ -67,7 +70,7 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: soq
-        path: bin/tui
+        path: bin/qt
 
   release:
     runs-on: ubuntu-latest
@@ -84,6 +87,8 @@ jobs:
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
+        with:
+          ref: main
 
       - name: Download a single artifact
         id: download
@@ -108,7 +113,7 @@ jobs:
           name: ${{ needs.tag.outputs.tag }}
           body: ${{ steps.changelog.outputs.changes }}
           token: ${{ github.token }}
-          artifacts: "${{ steps.download.outputs.download-path }}/bin/tui"
+          artifacts: "${{ steps.download.outputs.download-path }}/bin/qt"
 
       - name: Commit CHANGELOG.md
         uses: stefanzweifel/git-auto-commit-action@v5.0.1

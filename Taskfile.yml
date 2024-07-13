@@ -8,18 +8,18 @@ tasks:
 
   build:
     cmds:
-      - go build -tags dev -o bin/tui cmd/main.go
+      - go build -tags dev -o bin/qt cmd/main.go
     generates:
-      - './bin/tui'
+      - './bin/qt'
     sources:
       - 'cmd/**/*.go'
       - 'pkg/**/*.go'
 
   prod:
     cmds:
-      - go build -tags prod -o bin/tui cmd/main.go
+      - go build -tags prod -o bin/qt cmd/main.go
     generates:
-      - './bin/tui'
+      - './bin/qt'
     sources:
       - 'cmd/**/*.go'
       - 'pkg/**/*.go'
@@ -29,7 +29,7 @@ tasks:
       DEBUG: 1
     cmds:
       - task: build
-      - bin/tui
+      - bin/qt
 
   tui_log:
     cmds:
