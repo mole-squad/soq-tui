@@ -1,4 +1,4 @@
-name: Go
+name: CI
 
 on:
   push:
@@ -13,7 +13,9 @@ jobs:
 
   build:
     name: Build
+
     runs-on: ubuntu-latest
+
     steps:
     - uses: actions/checkout@v4
 
