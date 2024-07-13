@@ -8,7 +8,16 @@ tasks:
 
   build:
     cmds:
-      - go build -o bin/tui cmd/main.go
+      - go build -tags dev -o bin/tui cmd/main.go
+    generates:
+      - './bin/tui'
+    sources:
+      - 'cmd/**/*.go'
+      - 'pkg/**/*.go'
+
+  prod:
+    cmds:
+      - go build -tags prod -o bin/tui cmd/main.go
     generates:
       - './bin/tui'
     sources:
@@ -18,7 +27,6 @@ tasks:
   tui:
     env:
       DEBUG: 1
-      API_HOST: 'localhost:3000'
     cmds:
       - task: build
       - bin/tui
@@ -28,13 +36,6 @@ tasks:
       - rm -f debug.log
       - touch debug.log
       - tail -f debug.log
-
-  tui_live:
-    env:
-      API_HOST: 'tasks.tennyson.io'
-    cmds:
-      - task: build
-      - bin/tui
 
   fmt:
     cmds:

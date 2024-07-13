@@ -8,10 +8,10 @@ import (
 	"io"
 	"net/http"
 	"net/url"
-	"os"
 	"time"
 
 	soqapi "github.com/mole-squad/soq-api/api"
+	"github.com/mole-squad/soq-tui/pkg/config"
 )
 
 type Client struct {
@@ -22,7 +22,7 @@ type Client struct {
 }
 
 func NewClient() *Client {
-	apiHost := os.Getenv("API_HOST")
+	apiHost := config.APIHost
 
 	c := &http.Client{
 		Timeout: 10 * time.Second,
