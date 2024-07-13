@@ -25,6 +25,10 @@ jobs:
     - name: Setup go-task
       uses: pnorton5432/setup-task@v1
 
+    - uses: webfactory/ssh-agent@v0.7.0
+      with:
+        ssh-private-key: ${{ secrets.SOQ_API_DEPLOY_KEY }}
+
     - name: Configure for private packages
       run: |
         git config --global url.git@github.com:.insteadOf https://github.com/
