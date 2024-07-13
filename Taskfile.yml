@@ -1,0 +1,45 @@
+version: '3'
+
+dotenv: ['.env']
+
+interval: 500ms
+
+tasks:
+
+  build:
+    cmds:
+      - go build -o bin/tui cmd/main.go
+    generates:
+      - './bin/tui'
+    sources:
+      - 'cmd/**/*.go'
+      - 'pkg/**/*.go'
+
+  tui:
+    env:
+      DEBUG: 1
+      API_HOST: 'localhost:3000'
+    cmds:
+      - task: build
+      - bin/tui
+
+  tui_log:
+    cmds:
+      - rm -f debug.log
+      - touch debug.log
+      - tail -f debug.log
+
+  tui_live:
+    env:
+      API_HOST: 'tasks.tennyson.io'
+    cmds:
+      - task: build
+      - bin/tui
+
+  fmt:
+    cmds:
+      - go fmt ./...
+    sources:
+      - '**/*.go'
+
+
