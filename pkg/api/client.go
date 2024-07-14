@@ -6,8 +6,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
 	"net/url"
+	"os"
+	"path/filepath"
+	"strings"
 	"time"
 
 	soqapi "github.com/mole-squad/soq-api/api"
@@ -34,8 +38,63 @@ func NewClient() *Client {
 	}
 }
 
-func (c *Client) SetToken(token string) {
+func (c *Client) IsAuthenticated() bool {
+	return c.token != ""
+}
+
+func (c *Client) LoadToken() error {
+	tokenFilePath, err := c.getTokenFilePath()
+
+	data, err := os.ReadFile(tokenFilePath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			slog.Debug("token file does not exist")
+			return nil
+		}
+
+		return fmt.Errorf("error reading token file: %w", err)
+	}
+
+	rawToken := string(data)
+	cleanToken := strings.TrimRight(rawToken, "\r\n")
+	cleanToken = strings.TrimRight(cleanToken, "\n")
+
+	c.token = cleanToken
+
+	return nil
+}
+
+func (c *Client) SetToken(token string) error {
 	c.token = token
+
+	tokenFilePath, err := c.getTokenFilePath()
+
+	err = os.Mkdir(filepath.Dir(tokenFilePath), 0777)
+	if err != nil {
+		if !os.IsExist(err) {
+			return fmt.Errorf("error creating token directory: %w", err)
+		}
+	}
+
+	err = os.WriteFile(tokenFilePath, []byte(token), 0777)
+	if err != nil {
+		return fmt.Errorf("error writing token file: %w", err)
+	}
+
+	return nil
+}
+
+func (c *Client) ClearToken() error {
+	c.token = ""
+
+	tokenFilePath, err := c.getTokenFilePath()
+
+	err = os.Remove(tokenFilePath)
+	if err != nil {
+		return fmt.Errorf("error removing token file: %w", err)
+	}
+
+	return nil
 }
 
 func (c *Client) Login(ctx context.Context, username, password string) (string, error) {
@@ -108,6 +167,11 @@ func (c *Client) ListTasks(ctx context.Context) ([]soqapi.TaskDTO, error) {
 
 	defer res.Body.Close()
 
+	if res.StatusCode == http.StatusUnauthorized {
+		c.ClearToken()
+		return nil, fmt.Errorf("unauthorized")
+	}
+
 	respBody, err := io.ReadAll(res.Body)
 	if err != nil {
 		return nil, fmt.Errorf("error reading list tasks response: %w", err)
@@ -151,6 +215,11 @@ func (c *Client) CreateTask(ctx context.Context, t *soqapi.CreateTaskRequestDto)
 
 	defer res.Body.Close()
 
+	if res.StatusCode == http.StatusUnauthorized {
+		c.ClearToken()
+		return task, fmt.Errorf("unauthorized")
+	}
+
 	respBody, err := io.ReadAll(res.Body)
 	if err != nil {
 		return task, fmt.Errorf("error reading create task response: %w", err)
@@ -191,6 +260,11 @@ func (c *Client) UpdateTask(ctx context.Context, taskID uint, t *soqapi.UpdateTa
 
 	defer res.Body.Close()
 
+	if res.StatusCode == http.StatusUnauthorized {
+		c.ClearToken()
+		return task, fmt.Errorf("unauthorized")
+	}
+
 	respBody, err := io.ReadAll(res.Body)
 	if err != nil {
 		return task, fmt.Errorf("error reading update task response: %w", err)
@@ -224,6 +298,11 @@ func (c *Client) DeleteTask(ctx context.Context, taskID uint) error {
 
 	defer res.Body.Close()
 
+	if res.StatusCode == http.StatusUnauthorized {
+		c.ClearToken()
+		return fmt.Errorf("unauthorized")
+	}
+
 	if res.StatusCode != http.StatusNoContent {
 		return fmt.Errorf("unexpected status code: %d", res.StatusCode)
 	}
@@ -252,6 +331,11 @@ func (c *Client) ListFocusAreas(ctx context.Context) ([]soqapi.FocusAreaDTO, err
 
 	defer res.Body.Close()
 
+	if res.StatusCode == http.StatusUnauthorized {
+		c.ClearToken()
+		return nil, fmt.Errorf("unauthorized")
+	}
+
 	respBody, err := io.ReadAll(res.Body)
 	if err != nil {
 		return nil, fmt.Errorf("error reading list focus areas response: %w", err)
@@ -275,4 +359,13 @@ func (c *Client) buildHeaders() http.Header {
 	headers.Set("Content-Type", "application/json")
 
 	return headers
+}
+
+func (c *Client) getTokenFilePath() (string, error) {
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		return "", fmt.Errorf("error getting user home directory: %w", err)
+	}
+
+	return filepath.Join(homeDir, ".soq", "token"), nil
 }
