@@ -27,10 +27,16 @@ type AppModel struct {
 	taskForm  taskform.TaskFormModel
 	taskList  tasklist.TaskListModel
 	quitting  bool
+	width     int
 }
 
 func NewAppModel() AppModel {
 	client := api.NewClient()
+
+	err := client.LoadToken()
+	if err != nil {
+		slog.Error("failed to load token", "error", err)
+	}
 
 	return AppModel{
 		appState:  common.AppStateLogin,
@@ -42,11 +48,20 @@ func NewAppModel() AppModel {
 }
 
 func (m AppModel) Init() tea.Cmd {
-	return tea.Batch(
+	initCmd := tea.Batch(
 		m.loginForm.Init(),
 		m.taskList.Init(),
 		m.taskForm.Init(),
 	)
+
+	if !m.client.IsAuthenticated() {
+		return initCmd
+	}
+
+	return tea.Sequence(initCmd, tea.Batch(
+		common.NewRefreshListMsg(),
+		common.AppStateCmd(common.AppStateTaskList),
+	))
 }
 
 func (m AppModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -67,11 +82,18 @@ func (m AppModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.error = msg.Err
 
 	case common.AuthMsg:
-		m.client.SetToken(msg.Token)
+		err := m.client.SetToken(msg.Token)
+		if err != nil {
+			return m, common.NewErrorMsg(err)
+		}
+
 		return m, tea.Sequence(
 			common.NewRefreshListMsg(),
 			common.AppStateCmd(common.AppStateTaskList),
 		)
+
+	case tea.WindowSizeMsg:
+		m.width = msg.Width
 
 	case tea.KeyMsg:
 		switch m.appState {
@@ -122,7 +144,7 @@ func (m AppModel) View() string {
 	}
 
 	if m.error != nil {
-		return errorStyle.Render(fmt.Sprintf("Error: %s\n", m.error))
+		return errorStyle.Width(m.width).Render(fmt.Sprintf("Error: %s\n", m.error))
 	}
 
 	switch m.appState {
