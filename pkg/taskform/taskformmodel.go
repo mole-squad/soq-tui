@@ -98,8 +98,8 @@ type TaskFormModel struct {
 }
 
 func NewTaskFormModel(client *api.Client) TaskFormModel {
-	summaryInput := forms.NewFormField("Summary", 2)
-	notesInput := forms.NewFormField("Notes", 5)
+	summaryInput := forms.NewTextArea("Summary", 2)
+	notesInput := forms.NewTextArea("Notes", 5)
 
 	return TaskFormModel{
 		client:         client,
