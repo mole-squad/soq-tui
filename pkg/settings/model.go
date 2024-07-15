@@ -43,23 +43,19 @@ func (m SettingsModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m SettingsModel) View() string {
-	docFrameWidth, _ := styles.PageWrapperStyle.GetFrameSize()
-
 	sections := make([]string, 0)
 
 	helpContent := m.help.View(m.keys)
 
-	sections = append(sections, lipgloss.NewStyle().Width(m.width-docFrameWidth).Render(helpContent))
+	sections = append(sections, lipgloss.NewStyle().Width(m.width).Render(helpContent))
 
 	return styles.PageWrapperStyle.Render(lipgloss.JoinVertical(lipgloss.Left, sections...))
 }
 
 func (m SettingsModel) onWindowMsg(msg tea.WindowSizeMsg) (SettingsModel, tea.Cmd) {
-	docFrameWidth, _ := styles.PageWrapperStyle.GetFrameSize()
-
 	m.width = msg.Width
 
-	m.help.Width = msg.Width - docFrameWidth
+	m.help.Width = msg.Width
 
 	return m, nil
 }
