@@ -6,4 +6,5 @@ const (
 	AppStateLogin AppState = iota
 	AppStateTaskList
 	AppStateTaskForm
+	AppStateSettings
 )

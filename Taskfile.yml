@@ -36,7 +36,7 @@ tasks:
       - task: prod
       - cp bin/qt /usr/local/bin/qt
 
-  tui_log:
+  log:
     cmds:
       - rm -f debug.log
       - touch debug.log

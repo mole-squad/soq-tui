@@ -52,11 +52,11 @@ func NewLoginFormModel(client *api.Client) LoginFormModel {
 	}
 }
 
-func (m *LoginFormModel) Init() tea.Cmd {
+func (m LoginFormModel) Init() tea.Cmd {
 	return nil
 }
 
-func (m *LoginFormModel) Update(msg tea.Msg) (LoginFormModel, tea.Cmd) {
+func (m LoginFormModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
 		return m.onWindowMsg(msg)
@@ -65,14 +65,12 @@ func (m *LoginFormModel) Update(msg tea.Msg) (LoginFormModel, tea.Cmd) {
 		return m.onKeyMsg(msg)
 	}
 
-	return *m, nil
+	return m, nil
 }
 
 func (m LoginFormModel) View() string {
-	docFrameWidth, docFrameHeight := styles.PageWrapperStyle.GetFrameSize()
-
 	help := m.help.View(m.keys)
-	availHeight := m.height - docFrameHeight - lipgloss.Height(help)
+	availHeight := m.height - lipgloss.Height(help)
 
 	username := lipgloss.JoinVertical(
 		lipgloss.Left,
@@ -92,11 +90,11 @@ func (m LoginFormModel) View() string {
 		styles.FormFieldWrapperStyle.Render(password),
 	)
 
-	return styles.PageWrapperStyle.Render(lipgloss.JoinVertical(
+	return lipgloss.JoinVertical(
 		lipgloss.Left,
 		lipgloss.NewStyle().Height(availHeight).Render(form),
-		lipgloss.NewStyle().Width(m.width-docFrameWidth).Render(help),
-	))
+		lipgloss.NewStyle().Width(m.width).Render(help),
+	)
 }
 
 func (m *LoginFormModel) onKeyMsg(msg tea.KeyMsg) (LoginFormModel, tea.Cmd) {
@@ -126,7 +124,6 @@ func (m *LoginFormModel) onKeyMsg(msg tea.KeyMsg) (LoginFormModel, tea.Cmd) {
 }
 
 func (m *LoginFormModel) onWindowMsg(msg tea.WindowSizeMsg) (LoginFormModel, tea.Cmd) {
-	docFrameWidth, _ := styles.PageWrapperStyle.GetFrameSize()
 	formFieldWrapperWidth, _ := styles.FormFieldWrapperStyle.GetFrameSize()
 	inputFrameWidth, _ := styles.InputStyle.GetFrameSize()
 
@@ -135,8 +132,8 @@ func (m *LoginFormModel) onWindowMsg(msg tea.WindowSizeMsg) (LoginFormModel, tea
 
 	m.help.Width = msg.Width
 
-	m.username.Width = msg.Width - docFrameWidth - formFieldWrapperWidth - inputFrameWidth
-	m.password.Width = msg.Width - docFrameWidth - formFieldWrapperWidth - inputFrameWidth
+	m.username.Width = msg.Width - formFieldWrapperWidth - inputFrameWidth
+	m.password.Width = msg.Width - formFieldWrapperWidth - inputFrameWidth
 
 	return *m, nil
 }
