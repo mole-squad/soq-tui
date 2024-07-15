@@ -5,7 +5,7 @@ import (
 
 	"github.com/charmbracelet/bubbles/help"
 	"github.com/charmbracelet/bubbles/key"
-	"github.com/charmbracelet/bubbles/textarea"
+	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/mole-squad/soq-tui/pkg/api"
@@ -30,13 +30,16 @@ type LoginFormModel struct {
 	height int
 	width  int
 
-	username textarea.Model
-	password textarea.Model
+	username textinput.Model
+	password textinput.Model
 }
 
 func NewLoginFormModel(client *api.Client) LoginFormModel {
-	username := forms.NewFormField("Username", 1)
-	password := forms.NewFormField("Password", 1)
+	username := forms.NewTextInput("Username", 1)
+	password := forms.NewTextInput("Password", 1)
+
+	password.EchoMode = textinput.EchoPassword
+	password.EchoCharacter = '●'
 
 	username.Focus()
 
@@ -56,9 +59,7 @@ func (m *LoginFormModel) Init() tea.Cmd {
 func (m *LoginFormModel) Update(msg tea.Msg) (LoginFormModel, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
-		m.height = msg.Height
-		m.width = msg.Width
-		m.help.Width = msg.Width
+		return m.onWindowMsg(msg)
 
 	case tea.KeyMsg:
 		return m.onKeyMsg(msg)
@@ -122,6 +123,22 @@ func (m *LoginFormModel) onKeyMsg(msg tea.KeyMsg) (LoginFormModel, tea.Cmd) {
 	}
 
 	return *m, cmd
+}
+
+func (m *LoginFormModel) onWindowMsg(msg tea.WindowSizeMsg) (LoginFormModel, tea.Cmd) {
+	docFrameWidth, _ := styles.PageWrapperStyle.GetFrameSize()
+	formFieldWrapperWidth, _ := styles.FormFieldWrapperStyle.GetFrameSize()
+	inputFrameWidth, _ := styles.InputStyle.GetFrameSize()
+
+	m.height = msg.Height
+	m.width = msg.Width
+
+	m.help.Width = msg.Width
+
+	m.username.Width = msg.Width - docFrameWidth - formFieldWrapperWidth - inputFrameWidth
+	m.password.Width = msg.Width - docFrameWidth - formFieldWrapperWidth - inputFrameWidth
+
+	return *m, nil
 }
 
 func (m *LoginFormModel) onNext() (LoginFormModel, tea.Cmd) {
