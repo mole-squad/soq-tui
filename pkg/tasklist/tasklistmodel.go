@@ -23,9 +23,10 @@ type taskLoadMsg struct {
 }
 
 type listKeyMap struct {
-	New    key.Binding
-	Edit   key.Binding
-	Delete key.Binding
+	New     key.Binding
+	Edit    key.Binding
+	Delete  key.Binding
+	Resolve key.Binding
 }
 
 func newListKeyMap() listKeyMap {
@@ -41,6 +42,10 @@ func newListKeyMap() listKeyMap {
 		Delete: key.NewBinding(
 			key.WithKeys("d"),
 			key.WithHelp("d", "delete task"),
+		),
+		Resolve: key.NewBinding(
+			key.WithKeys("r"),
+			key.WithHelp("r", "resolve task"),
 		),
 	}
 }
@@ -134,6 +139,26 @@ func (m TaskListModel) Update(msg tea.Msg) (TaskListModel, tea.Cmd) {
 			err := m.client.DeleteTask(context.Background(), taskItem.task.ID)
 			if err != nil {
 				return m, common.NewErrorMsg(fmt.Errorf("failed to delete task: %w", err))
+			}
+
+			return m, tea.Sequence(
+				common.NewRefreshListMsg(),
+			)
+
+		case key.Matches(msg, m.keys.Resolve):
+			selected := m.list.SelectedItem()
+			if selected == nil {
+				return m, common.NewErrorMsg(fmt.Errorf("no task selected"))
+			}
+
+			taskItem, ok := selected.(TaskListItem)
+			if !ok {
+				return m, common.NewErrorMsg(fmt.Errorf("unexpected task item type"))
+			}
+
+			_, err := m.client.ResolveTask(context.Background(), taskItem.task.ID)
+			if err != nil {
+				return m, common.NewErrorMsg(fmt.Errorf("failed to resolve task: %w", err))
 			}
 
 			return m, tea.Sequence(

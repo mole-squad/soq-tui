@@ -277,6 +277,46 @@ func (c *Client) UpdateTask(ctx context.Context, taskID uint, t *soqapi.UpdateTa
 	return task, nil
 }
 
+func (c *Client) ResolveTask(ctx context.Context, taskID uint) (soqapi.TaskDTO, error) {
+	var task soqapi.TaskDTO
+
+	reqUrl := url.URL{
+		Scheme: "http",
+		Host:   c.apiHost,
+		Path:   fmt.Sprintf("/tasks/%d/resolve", taskID),
+	}
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, reqUrl.String(), nil)
+	if err != nil {
+		return task, fmt.Errorf("error building resolve task request: %w", err)
+	}
+
+	req.Header = c.buildHeaders()
+
+	res, err := c.httpClient.Do(req)
+	if err != nil {
+		return task, fmt.Errorf("error executing resolve task request: %w", err)
+	}
+
+	defer res.Body.Close()
+
+	if res.StatusCode == http.StatusUnauthorized {
+		c.ClearToken()
+		return task, fmt.Errorf("unauthorized")
+	}
+
+	respBody, err := io.ReadAll(res.Body)
+	if err != nil {
+		return task, fmt.Errorf("error reading resolve task response: %w", err)
+	}
+
+	if err = json.Unmarshal(respBody, &task); err != nil {
+		return task, fmt.Errorf("error unmarshalling resolve task response: %w", err)
+	}
+
+	return task, nil
+}
+
 func (c *Client) DeleteTask(ctx context.Context, taskID uint) error {
 	reqUrl := url.URL{
 		Scheme: "http",
