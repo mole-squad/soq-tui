@@ -39,40 +39,42 @@ func NewToggleSidePanelMsg(isOpen bool) tea.Cmd {
 	}
 }
 
-type formKeyMap struct {
+type keyMap struct {
 	Help key.Binding
 	Exit key.Binding
 	Save key.Binding
 	Next key.Binding
 }
 
-func (k formKeyMap) ShortHelp() []key.Binding {
+func (k keyMap) ShortHelp() []key.Binding {
 	return []key.Binding{k.Help, k.Save, k.Exit}
 }
 
-func (k formKeyMap) FullHelp() [][]key.Binding {
+func (k keyMap) FullHelp() [][]key.Binding {
 	return [][]key.Binding{
 		{k.Help, k.Save, k.Exit},
 	}
 }
 
-var keys = formKeyMap{
-	Help: key.NewBinding(
-		key.WithKeys("ctrl+h"),
-		key.WithHelp("ctrl+h", "help"),
-	),
-	Exit: key.NewBinding(
-		key.WithKeys("esc"),
-		key.WithHelp("esc", "exit"),
-	),
-	Save: key.NewBinding(
-		key.WithKeys("ctrl+s"),
-		key.WithHelp("ctrl+s", "save"),
-	),
-	Next: key.NewBinding(
-		key.WithKeys("tab"),
-		key.WithHelp("tab", "next field"),
-	),
+func newKeyMap() keyMap {
+	return keyMap{
+		Help: key.NewBinding(
+			key.WithKeys("ctrl+h"),
+			key.WithHelp("ctrl+h", "help"),
+		),
+		Exit: key.NewBinding(
+			key.WithKeys("esc"),
+			key.WithHelp("esc", "exit"),
+		),
+		Save: key.NewBinding(
+			key.WithKeys("ctrl+s"),
+			key.WithHelp("ctrl+s", "save"),
+		),
+		Next: key.NewBinding(
+			key.WithKeys("tab"),
+			key.WithHelp("tab", "next field"),
+		),
+	}
 }
 
 type TaskFormModel struct {
@@ -93,7 +95,7 @@ type TaskFormModel struct {
 	notes          textarea.Model
 	focusAreaInput selectinput.SelectInputModel
 
-	keys formKeyMap
+	keys keyMap
 	help help.Model
 }
 
@@ -103,7 +105,7 @@ func NewTaskFormModel(client *api.Client) TaskFormModel {
 
 	return TaskFormModel{
 		client:         client,
-		keys:           keys,
+		keys:           newKeyMap(),
 		help:           help.New(),
 		summary:        summaryInput,
 		height:         0,
@@ -114,13 +116,13 @@ func NewTaskFormModel(client *api.Client) TaskFormModel {
 	}
 }
 
-func (m *TaskFormModel) Init() tea.Cmd {
+func (m TaskFormModel) Init() tea.Cmd {
 	return tea.Batch(
 		textarea.Blink,
 	)
 }
 
-func (m *TaskFormModel) Update(msg tea.Msg) (TaskFormModel, tea.Cmd) {
+func (m TaskFormModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var (
 		cmd  tea.Cmd
 		cmds []tea.Cmd
@@ -136,11 +138,11 @@ func (m *TaskFormModel) Update(msg tea.Msg) (TaskFormModel, tea.Cmd) {
 
 	case common.CreateTaskMsg:
 		cmd = m.onTaskCreate()
-		return *m, cmd
+		return m, cmd
 
 	case common.SelectTaskMsg:
 		cmd = m.onTaskSelect(msg.Task)
-		return *m, cmd
+		return m, cmd
 
 	case toggleSidePanelMsg:
 		m.onSidePanelToggle(msg.isOpen)
@@ -166,15 +168,14 @@ func (m *TaskFormModel) Update(msg tea.Msg) (TaskFormModel, tea.Cmd) {
 		cmd = tea.Batch(cmds...)
 	}
 
-	return *m, cmd
+	return m, cmd
 }
 
-func (m *TaskFormModel) View() string {
-	docFrameWidth, docFrameHeight := styles.PageWrapperStyle.GetFrameSize()
+func (m TaskFormModel) View() string {
 	sectionFrameWidth, sectionFrameHeight := styles.BorderStyle.GetFrameSize()
 
 	help := m.help.View(m.keys)
-	availHeight := m.height - docFrameHeight - lipgloss.Height(help)
+	availHeight := m.height - lipgloss.Height(help)
 
 	summary := lipgloss.JoinVertical(
 		lipgloss.Left,
@@ -201,12 +202,10 @@ func (m *TaskFormModel) View() string {
 		styles.FormFieldWrapperStyle.Render(focusArea),
 	)
 
-	contentWidth := m.width - docFrameWidth
-
 	content := form
 	if m.isSidePanelVisible {
 		panelContent := m.focusAreaInput.ViewSelectPanel()
-		formWidth := contentWidth - sidePanelWidth
+		formWidth := m.width - sidePanelWidth
 
 		content = lipgloss.JoinHorizontal(
 			lipgloss.Top,
@@ -215,16 +214,17 @@ func (m *TaskFormModel) View() string {
 		)
 	}
 
-	return styles.PageWrapperStyle.Render(lipgloss.JoinVertical(
+	return lipgloss.JoinVertical(
 		lipgloss.Left,
 		lipgloss.NewStyle().Height(availHeight).Render(content),
-		lipgloss.NewStyle().Width(m.width-docFrameWidth-sectionFrameWidth).Render(help),
-	))
+		lipgloss.NewStyle().Width(m.width-sectionFrameWidth).Render(help),
+	)
 }
 
 func (m *TaskFormModel) onWindowSize(width, height int) {
 	m.height = height
 	m.width = width
+
 	m.setInputSizes()
 }
 
@@ -234,7 +234,6 @@ func (m *TaskFormModel) onSidePanelToggle(isOpen bool) {
 }
 
 func (m *TaskFormModel) setInputSizes() {
-	docFrameWidth, docFrameHeight := styles.PageWrapperStyle.GetFrameSize()
 	sectionFrameWidth, sectionFrameHeight := styles.BorderStyle.GetFrameSize()
 	formFieldWrapperWidth, _ := styles.FormFieldWrapperStyle.GetFrameSize()
 	inputFrameWidth, _ := styles.InputStyle.GetFrameSize()
@@ -242,7 +241,7 @@ func (m *TaskFormModel) setInputSizes() {
 	help := m.help.View(m.keys)
 	helpHeight := lipgloss.Height(help)
 
-	availWidth := m.width - docFrameWidth
+	availWidth := m.width
 	if m.isSidePanelVisible {
 		availWidth -= sidePanelWidth
 	}
@@ -253,43 +252,43 @@ func (m *TaskFormModel) setInputSizes() {
 
 	m.help.Width = m.width - sectionFrameWidth
 
-	m.focusAreaInput.SetSize(sidePanelWidth-sectionFrameWidth, m.height-docFrameHeight-sectionFrameHeight-helpHeight)
+	m.focusAreaInput.SetSize(sidePanelWidth-sectionFrameWidth, m.height-sectionFrameHeight-helpHeight)
 }
 
-func (m *TaskFormModel) onKeyMsg(msg tea.KeyMsg) (TaskFormModel, tea.Cmd) {
+func (m TaskFormModel) onKeyMsg(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 
 	switch {
 
 	case key.Matches(msg, m.keys.Help):
 		m.help.ShowAll = !m.help.ShowAll
-		return *m, nil
+		return m, nil
 
 	case key.Matches(msg, m.keys.Exit):
-		return *m, common.AppStateCmd(common.AppStateTaskList)
+		return m, common.AppStateCmd(common.AppStateTaskList)
 
 	case key.Matches(msg, m.keys.Save):
-		return *m, m.submitTask()
+		return m, m.submitTask()
 
 	case key.Matches(msg, m.keys.Next):
-		return *m, m.onNextField()
+		return m, m.onNextField()
 	}
 
 	switch m.focused {
 	case summaryInputIdx:
 		m.summary, cmd = m.summary.Update(msg)
-		return *m, cmd
+		return m, cmd
 
 	case notesInputIdx:
 		m.notes, cmd = m.notes.Update(msg)
-		return *m, cmd
+		return m, cmd
 
 	case focusAreaInputIdx:
 		m.focusAreaInput, cmd = m.focusAreaInput.Update(msg)
-		return *m, cmd
+		return m, cmd
 	}
 
-	return *m, nil
+	return m, nil
 }
 
 func (m *TaskFormModel) onFocusAreaRefresh() error {
@@ -357,6 +356,8 @@ func (m *TaskFormModel) onTaskSelect(task soqapi.TaskDTO) tea.Cmd {
 
 	m.isNewTask = false
 	m.task = task
+	m.focused = summaryInputIdx
+	m.isSidePanelVisible = false
 
 	m.setFormStateFromModel()
 

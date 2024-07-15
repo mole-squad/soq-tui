@@ -4,13 +4,17 @@ import (
 	"fmt"
 	"log/slog"
 
+	"github.com/charmbracelet/bubbles/key"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/mole-squad/soq-tui/pkg/api"
 	"github.com/mole-squad/soq-tui/pkg/common"
 	"github.com/mole-squad/soq-tui/pkg/loginform"
+	"github.com/mole-squad/soq-tui/pkg/settings"
+	"github.com/mole-squad/soq-tui/pkg/styles"
 	"github.com/mole-squad/soq-tui/pkg/taskform"
 	"github.com/mole-squad/soq-tui/pkg/tasklist"
+	"github.com/mole-squad/soq-tui/pkg/utils"
 )
 
 var (
@@ -26,8 +30,12 @@ type AppModel struct {
 	loginForm loginform.LoginFormModel
 	taskForm  taskform.TaskFormModel
 	taskList  tasklist.TaskListModel
-	quitting  bool
-	width     int
+	settings  settings.SettingsModel
+
+	keys keyMap
+
+	quitting bool
+	width    int
 }
 
 func NewAppModel() AppModel {
@@ -41,9 +49,11 @@ func NewAppModel() AppModel {
 	return AppModel{
 		appState:  common.AppStateLogin,
 		client:    client,
+		keys:      newKeyMap(),
 		loginForm: loginform.NewLoginFormModel(client),
 		taskForm:  taskform.NewTaskFormModel(client),
 		taskList:  tasklist.NewTaskListModel(client),
+		settings:  settings.NewSettingsModel(client),
 	}
 }
 
@@ -65,11 +75,6 @@ func (m AppModel) Init() tea.Cmd {
 }
 
 func (m AppModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	var (
-		cmds []tea.Cmd
-		cmd  tea.Cmd
-	)
-
 	slog.Debug(fmt.Sprintf("AppModel.Update: %T", msg))
 
 	switch msg := msg.(type) {
@@ -93,52 +98,23 @@ func (m AppModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		)
 
 	case tea.WindowSizeMsg:
-		m.width = msg.Width
+		return m.onWindowSizeMsg(msg)
 
 	case tea.KeyMsg:
-		switch m.appState {
-
-		case common.AppStateLogin:
-			m.loginForm, cmd = m.loginForm.Update(msg)
-			return m, cmd
-
-		case common.AppStateTaskList:
-			m.taskList, cmd = m.taskList.Update(msg)
-			return m, cmd
-
-		case common.AppStateTaskForm:
-			m.taskForm, cmd = m.taskForm.Update(msg)
-			return m, cmd
-		}
+		return m.onKeyMsg(msg)
 
 	case common.AppStateMsg:
 		m.appState = msg.NewState
 	}
 
-	m.loginForm, cmd = m.loginForm.Update(msg)
-	if cmd != nil {
-		cmds = append(cmds, cmd)
-	}
-
-	m.taskList, cmd = m.taskList.Update(msg)
-	if cmd != nil {
-		cmds = append(cmds, cmd)
-	}
-
-	m.taskForm, cmd = m.taskForm.Update(msg)
-	if cmd != nil {
-		cmds = append(cmds, cmd)
-	}
-
-	cmd = nil
-	if len(cmds) > 0 {
-		cmd = tea.Batch(cmds...)
-	}
-
-	return m, cmd
+	return m.applyUpdates(msg)
 }
 
 func (m AppModel) View() string {
+	return styles.PageWrapperStyle.Render(m.renderContent())
+}
+
+func (m AppModel) renderContent() string {
 	if m.quitting {
 		return "Bye!\n"
 	}
@@ -156,7 +132,68 @@ func (m AppModel) View() string {
 
 	case common.AppStateTaskForm:
 		return m.taskForm.View()
+
+	case common.AppStateSettings:
+		return m.settings.View()
 	}
 
 	return "No state"
+}
+
+func (m AppModel) applyUpdates(msg tea.Msg) (tea.Model, tea.Cmd) {
+	cmds := make([]tea.Cmd, 0)
+
+	m.loginForm, cmds = utils.GatherUpdates(m.loginForm, msg, cmds)
+	m.taskList, cmds = utils.GatherUpdates(m.taskList, msg, cmds)
+	m.taskForm, cmds = utils.GatherUpdates(m.taskForm, msg, cmds)
+	m.settings, cmds = utils.GatherUpdates(m.settings, msg, cmds)
+
+	if len(cmds) > 0 {
+		return m, tea.Batch(cmds...)
+	}
+
+	return m, nil
+}
+
+func (m AppModel) onWindowSizeMsg(msg tea.WindowSizeMsg) (tea.Model, tea.Cmd) {
+	docFrameWidth, docFrameHeight := styles.PageWrapperStyle.GetFrameSize()
+
+	m.width = msg.Width
+
+	wrappedMsg := tea.WindowSizeMsg{
+		Width:  msg.Width - docFrameWidth,
+		Height: msg.Height - docFrameHeight,
+	}
+
+	return m.applyUpdates(wrappedMsg)
+}
+
+func (m AppModel) onKeyMsg(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+	var cmd tea.Cmd
+
+	switch m.appState {
+
+	case common.AppStateLogin:
+		m.loginForm, cmd = utils.ApplyUpdate(m.loginForm, msg)
+		return m, cmd
+
+	case common.AppStateTaskList:
+		m.taskList, cmd = utils.ApplyUpdate(m.taskList, msg)
+		return m, cmd
+
+	case common.AppStateTaskForm:
+		m.taskForm, cmd = utils.ApplyUpdate(m.taskForm, msg)
+		return m, cmd
+
+	case common.AppStateSettings:
+		m.settings, cmd = utils.ApplyUpdate(m.settings, msg)
+		return m, cmd
+	}
+
+	switch {
+	case key.Matches(msg, m.keys.Quit):
+		return m, tea.Quit
+	}
+
+	return m, nil
 }
