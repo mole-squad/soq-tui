@@ -25,9 +25,5 @@ func NewTextInput(label string, height int) textinput.Model {
 	input.Placeholder = label
 	input.Prompt = ""
 
-	// input.FocusedStyle.CursorLine = lipgloss.NewStyle()
-
-	// input.SetHeight(height)
-
 	return input
 }
