@@ -66,20 +66,16 @@ jobs:
     - name: Build for Mac
       run: task prod_mac
 
-    - name: Upload Artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: soq
-        path: bin/qt-darwin-arm64
-
     - name: Build for Linux
       run: task prod_linux
 
-    - name: Upload Artifact
+    - name: Upload Artifacts
       uses: actions/upload-artifact@v4
       with:
         name: soq
-        path: bin/qt-linux-amd64
+        path: |
+          bin/qt-darwin-arm64
+          bin/qt-linux-amd64
 
   release:
     runs-on: ubuntu-latest
