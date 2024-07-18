@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.4.4] - 2024-07-18
+### :bug: Bug Fixes
+- [`48b7f8e`](https://github.com/mole-squad/soq-tui/commit/48b7f8e84551d5533b58a16186a4b132b5da6852) - pass arch vars to build command *(commit by [@burkel24](https://github.com/burkel24))*
+
+
 ## [v0.4.3] - 2024-07-18
 ### :bug: Bug Fixes
 - [`3903234`](https://github.com/mole-squad/soq-tui/commit/39032346dc890fd36090325404b3b9fcc3ae8e64) - fix artifact ci step *(commit by [@burkel24](https://github.com/burkel24))*
@@ -60,3 +65,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [v0.4.1]: https://github.com/mole-squad/soq-tui/compare/v0.4.0...v0.4.1
 [v0.4.2]: https://github.com/mole-squad/soq-tui/compare/v0.4.1...v0.4.2
 [v0.4.3]: https://github.com/mole-squad/soq-tui/compare/v0.4.2...v0.4.3
+[v0.4.4]: https://github.com/mole-squad/soq-tui/compare/v0.4.3...v0.4.4
