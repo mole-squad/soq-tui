@@ -16,13 +16,31 @@ tasks:
       - 'pkg/**/*.go'
 
   prod:
+    vars:
+      GOOS: '{{default "darwin" .GOOS}}'
+      GOARCH: '{{default "arm64" .GOARCH}}'
     cmds:
-      - go build -tags prod -o bin/qt cmd/main.go
+      - echo "Building for {{.GOOS}}/{{.GOARCH}}"
+      - go build -tags prod -o bin/qt-{{.GOOS}}-{{.GOARCH}} cmd/main.go
     generates:
-      - './bin/qt'
+      - './bin/qt-{{.GOOS}}-{{.GOARCH}}'
     sources:
       - 'cmd/**/*.go'
       - 'pkg/**/*.go'
+
+  prod_mac:
+    cmds:
+      - task: prod
+        vars:
+          GOOS: 'darwin'
+          GOARCH: 'arm64'
+
+  prod_linux:
+    cmds:
+      - task: prod
+        vars:
+          GOOS: 'linux'
+          GOARCH: 'amd64'
 
   tui:
     env:
