@@ -101,6 +101,9 @@ jobs:
         with:
           name: soq
 
+      - name: LS
+        run: ls -la ${{ steps.download.outputs.download-path }}
+
       - name: Update CHANGELOG
         id: changelog
         uses: requarks/changelog-action@v1
