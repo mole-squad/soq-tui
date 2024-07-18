@@ -63,14 +63,23 @@ jobs:
       run: |
         git config --global url.git@github.com:.insteadOf https://github.com/
 
-    - name: Build
-      run: task prod
+    - name: Build for Mac
+      run: task prod_mac
 
     - name: Upload Artifact
       uses: actions/upload-artifact@v4
       with:
         name: soq
-        path: bin/qt
+        path: bin/qt-darwin-arm64
+
+    - name: Build for Linux
+      run: task prod_linux
+
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: soq
+        path: bin/qt-linux-amd64
 
   release:
     runs-on: ubuntu-latest
@@ -90,7 +99,7 @@ jobs:
         with:
           ref: main
 
-      - name: Download a single artifact
+      - name: Download artifacts
         id: download
         uses: actions/download-artifact@v4
         with:
@@ -113,7 +122,7 @@ jobs:
           name: ${{ needs.tag.outputs.tag }}
           body: ${{ steps.changelog.outputs.changes }}
           token: ${{ github.token }}
-          artifacts: "${{ steps.download.outputs.download-path }}/qt"
+          artifacts: "${{ steps.download.outputs.download-path }}/qt-darwin-arm64 ${{ steps.download.outputs.download-path }}/qt-linux-amd64"
 
       - name: Commit CHANGELOG.md
         uses: stefanzweifel/git-auto-commit-action@v5.0.1
