@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.4.1] - 2024-07-18
+### :bug: Bug Fixes
+- [`44d3963`](https://github.com/mole-squad/soq-tui/commit/44d396322b32d68fc944f73c589bc9b1fb8ab1a5) - fix release ci *(commit by [@burkel24](https://github.com/burkel24))*
+
+
 ## [v0.3.0] - 2024-07-14
 ### :sparkles: New Features
 - [`0815264`](https://github.com/mole-squad/soq-tui/commit/08152640dba6de115a4e84f15f531f062b0d0a70) - persist token to disk *(PR [#3](https://github.com/mole-squad/soq-tui/pull/3) by [@burkel24](https://github.com/burkel24))*
@@ -42,3 +47,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [v0.2.0]: https://github.com/mole-squad/soq-tui/compare/v0.1.0...v0.2.0
 [v0.2.1]: https://github.com/mole-squad/soq-tui/compare/v0.2.0...v0.2.1
 [v0.3.0]: https://github.com/mole-squad/soq-tui/compare/v0.2.1...v0.3.0
+[v0.4.1]: https://github.com/mole-squad/soq-tui/compare/v0.4.0...v0.4.1
