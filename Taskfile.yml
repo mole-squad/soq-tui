@@ -21,7 +21,7 @@ tasks:
       GOARCH: '{{default "arm64" .GOARCH}}'
     cmds:
       - echo "Building for {{.GOOS}}/{{.GOARCH}}"
-      - go build -tags prod -o bin/qt-{{.GOOS}}-{{.GOARCH}} cmd/main.go
+      - GOOS={{.GOOS}} GOARCH={{.GOARCH}} go build -tags prod -o bin/qt-{{.GOOS}}-{{.GOARCH}} cmd/main.go
     generates:
       - './bin/qt-{{.GOOS}}-{{.GOARCH}}'
     sources:
