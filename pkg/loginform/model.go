@@ -17,7 +17,7 @@ const (
 
 type LoginFormModel struct {
 	client *api.Client
-	form   forms.FormModel
+	form   forms.Model
 }
 
 const (
