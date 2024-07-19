@@ -1,8 +1,6 @@
 package forms
 
 import (
-	"log/slog"
-
 	teatextinput "github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
@@ -79,19 +77,17 @@ func (t *TextInput) GetValue() string {
 	return t.teaInput.Value()
 }
 
-func (t *TextInput) SetValue(string) {
+func (t *TextInput) SetValue(value string) {
+	t.teaInput.SetValue(value)
 }
 
 func (t *TextInput) SetWidth(width int) {
 	inputFrameWidth, _ := styles.InputStyle.GetFrameSize()
 
-	slog.Info("Setting width of text input", "width", width, "inputFrameWidth", inputFrameWidth)
-
 	t.teaInput.Width = width - inputFrameWidth
 }
 
-func (t *TextInput) SetHeight(int) {
-}
+func (t *TextInput) SetHeight(int) {}
 
 func WithHiddenTextInput() TextInputOption {
 	return func(t *TextInput) {

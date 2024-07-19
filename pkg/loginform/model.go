@@ -17,11 +17,7 @@ const (
 
 type LoginFormModel struct {
 	client *api.Client
-
-	// TODO
-	keys keyMap
-
-	form forms.FormModel
+	form   forms.FormModel
 }
 
 const (
@@ -32,7 +28,6 @@ const (
 func NewLoginFormModel(client *api.Client) LoginFormModel {
 	model := LoginFormModel{
 		client: client,
-		keys:   keys,
 	}
 
 	username := forms.NewTextInput(
