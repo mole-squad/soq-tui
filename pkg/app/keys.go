@@ -9,7 +9,7 @@ type keyMap struct {
 func newKeyMap() keyMap {
 	return keyMap{
 		Quit: key.NewBinding(
-			key.WithKeys("ctrl+c", "q"),
+			key.WithKeys("ctrl+c"),
 			key.WithHelp("ctrl+c", "quit"),
 		),
 	}

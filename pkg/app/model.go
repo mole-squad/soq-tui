@@ -148,11 +148,7 @@ func (m AppModel) applyUpdates(msg tea.Msg) (tea.Model, tea.Cmd) {
 	m.taskForm, cmds = utils.GatherUpdates(m.taskForm, msg, cmds)
 	m.settings, cmds = utils.GatherUpdates(m.settings, msg, cmds)
 
-	if len(cmds) > 0 {
-		return m, tea.Batch(cmds...)
-	}
-
-	return m, nil
+	return m, utils.BatchIfExists(cmds)
 }
 
 func (m AppModel) onWindowSizeMsg(msg tea.WindowSizeMsg) (tea.Model, tea.Cmd) {
@@ -171,6 +167,11 @@ func (m AppModel) onWindowSizeMsg(msg tea.WindowSizeMsg) (tea.Model, tea.Cmd) {
 func (m AppModel) onKeyMsg(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 
+	switch {
+	case key.Matches(msg, m.keys.Quit):
+		return m, tea.Quit
+	}
+
 	switch m.appState {
 
 	case common.AppStateLogin:
@@ -188,11 +189,6 @@ func (m AppModel) onKeyMsg(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	case common.AppStateSettings:
 		m.settings, cmd = utils.ApplyUpdate(m.settings, msg)
 		return m, cmd
-	}
-
-	switch {
-	case key.Matches(msg, m.keys.Quit):
-		return m, tea.Quit
 	}
 
 	return m, nil

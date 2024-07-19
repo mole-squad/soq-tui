@@ -3,15 +3,11 @@ package loginform
 import (
 	"context"
 
-	"github.com/charmbracelet/bubbles/help"
-	"github.com/charmbracelet/bubbles/key"
-	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
 	"github.com/mole-squad/soq-tui/pkg/api"
 	"github.com/mole-squad/soq-tui/pkg/common"
 	"github.com/mole-squad/soq-tui/pkg/forms"
-	"github.com/mole-squad/soq-tui/pkg/styles"
+	"github.com/mole-squad/soq-tui/pkg/utils"
 )
 
 const (
@@ -22,141 +18,79 @@ const (
 type LoginFormModel struct {
 	client *api.Client
 
+	// TODO
 	keys keyMap
-	help help.Model
 
-	focused int
-
-	height int
-	width  int
-
-	username textinput.Model
-	password textinput.Model
+	form forms.FormModel
 }
 
+const (
+	usernameKey = "username"
+	passwordKey = "password"
+)
+
 func NewLoginFormModel(client *api.Client) LoginFormModel {
-	username := forms.NewTextInput("Username", 1)
-	password := forms.NewTextInput("Password", 1)
-
-	password.EchoMode = textinput.EchoPassword
-	password.EchoCharacter = '●'
-
-	username.Focus()
-
-	return LoginFormModel{
-		client:   client,
-		keys:     keys,
-		help:     help.New(),
-		username: username,
-		password: password,
+	model := LoginFormModel{
+		client: client,
+		keys:   keys,
 	}
+
+	username := forms.NewTextInput(
+		usernameKey,
+		"Username",
+	)
+
+	password := forms.NewTextInput(
+		passwordKey,
+		"Password",
+		forms.WithHiddenTextInput(),
+	)
+
+	model.form = forms.NewFormModel(
+		forms.WithField(username),
+		forms.WithField(password),
+	)
+
+	return model
 }
 
 func (m LoginFormModel) Init() tea.Cmd {
-	return nil
+	return m.form.Focus()
 }
 
 func (m LoginFormModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	switch msg := msg.(type) {
-	case tea.WindowSizeMsg:
-		return m.onWindowMsg(msg)
+	var cmd tea.Cmd
 
+	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		return m.onKeyMsg(msg)
+
+	case forms.SubmitFormMsg:
+		return m, m.onSubmit()
 	}
 
-	return m, nil
+	m.form, cmd = utils.ApplyUpdate(m.form, msg)
+
+	return m, cmd
 }
 
 func (m LoginFormModel) View() string {
-	help := m.help.View(m.keys)
-	availHeight := m.height - lipgloss.Height(help)
-
-	username := lipgloss.JoinVertical(
-		lipgloss.Left,
-		styles.InputLabelStyle.Render("Username"),
-		styles.InputStyle.Render(m.username.View()),
-	)
-
-	password := lipgloss.JoinVertical(
-		lipgloss.Left,
-		styles.InputLabelStyle.Render("Password"),
-		styles.InputStyle.Render(m.password.View()),
-	)
-
-	form := lipgloss.JoinVertical(
-		lipgloss.Left,
-		styles.FormFieldWrapperStyle.Render(username),
-		styles.FormFieldWrapperStyle.Render(password),
-	)
-
-	return lipgloss.JoinVertical(
-		lipgloss.Left,
-		lipgloss.NewStyle().Height(availHeight).Render(form),
-		lipgloss.NewStyle().Width(m.width).Render(help),
-	)
+	return m.form.View()
 }
 
-func (m *LoginFormModel) onKeyMsg(msg tea.KeyMsg) (LoginFormModel, tea.Cmd) {
+func (m LoginFormModel) onKeyMsg(msg tea.KeyMsg) (LoginFormModel, tea.Cmd) {
 	var cmd tea.Cmd
 
-	switch {
-	case key.Matches(msg, m.keys.Quit):
-		return *m, common.NewQuitMsg
+	m.form, cmd = utils.ApplyUpdate(m.form, msg)
 
-	case key.Matches(msg, m.keys.Next):
-		return m.onNext()
-
-	case key.Matches(msg, m.keys.Submit):
-		return *m, m.onSubmit()
-	}
-
-	switch m.focused {
-	case usernameInputIdx:
-		m.username, cmd = m.username.Update(msg)
-
-	case passwordInputIdx:
-		m.password, cmd = m.password.Update(msg)
-
-	}
-
-	return *m, cmd
-}
-
-func (m *LoginFormModel) onWindowMsg(msg tea.WindowSizeMsg) (LoginFormModel, tea.Cmd) {
-	formFieldWrapperWidth, _ := styles.FormFieldWrapperStyle.GetFrameSize()
-	inputFrameWidth, _ := styles.InputStyle.GetFrameSize()
-
-	m.height = msg.Height
-	m.width = msg.Width
-
-	m.help.Width = msg.Width
-
-	m.username.Width = msg.Width - formFieldWrapperWidth - inputFrameWidth
-	m.password.Width = msg.Width - formFieldWrapperWidth - inputFrameWidth
-
-	return *m, nil
-}
-
-func (m *LoginFormModel) onNext() (LoginFormModel, tea.Cmd) {
-	switch m.focused {
-	case usernameInputIdx:
-		m.username.Blur()
-		m.password.Focus()
-		m.focused = passwordInputIdx
-
-	case passwordInputIdx:
-		m.password.Blur()
-		m.username.Focus()
-		m.focused = usernameInputIdx
-	}
-
-	return *m, nil
+	return m, cmd
 }
 
 func (m *LoginFormModel) onSubmit() tea.Cmd {
-	username := m.username.Value()
-	password := m.password.Value()
+	values := m.form.Value()
+
+	username := values[usernameKey]
+	password := values[passwordKey]
 
 	token, err := m.client.Login(context.Background(), username, password)
 	if err != nil {

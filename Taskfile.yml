@@ -49,6 +49,10 @@ tasks:
       - task: build
       - bin/qt
 
+  kill:
+    cmds:
+      - kill -9 $(ps -xf | grep 'task tui' | awk 'NR==1{ print $2 }')
+
   install:
     cmds:
       - task: prod

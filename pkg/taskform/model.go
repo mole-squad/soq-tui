@@ -14,7 +14,7 @@ import (
 	soqapi "github.com/mole-squad/soq-api/api"
 	"github.com/mole-squad/soq-tui/pkg/api"
 	"github.com/mole-squad/soq-tui/pkg/common"
-	"github.com/mole-squad/soq-tui/pkg/forms"
+	"github.com/mole-squad/soq-tui/pkg/oldforms"
 	"github.com/mole-squad/soq-tui/pkg/selectinput"
 	"github.com/mole-squad/soq-tui/pkg/styles"
 )
@@ -100,8 +100,8 @@ type TaskFormModel struct {
 }
 
 func NewTaskFormModel(client *api.Client) TaskFormModel {
-	summaryInput := forms.NewTextArea("Summary", 2)
-	notesInput := forms.NewTextArea("Notes", 5)
+	summaryInput := oldforms.NewTextArea("Summary", 2)
+	notesInput := oldforms.NewTextArea("Notes", 5)
 
 	return TaskFormModel{
 		client:         client,
