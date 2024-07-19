@@ -12,6 +12,8 @@ type TextInput struct {
 	label string
 
 	teaInput teatextinput.Model
+
+	width int
 }
 
 type TextInputOption func(*TextInput)
@@ -50,7 +52,10 @@ func (t *TextInput) View() string {
 		renderedLabel = styles.InputLabelStyle.Render(t.label)
 	}
 
-	renderedInput := styles.InputStyle.Render(t.teaInput.View())
+	frameWidth, _ := styles.InputStyle.GetFrameSize()
+	renderedInput := styles.InputStyle.
+		Width(t.width - frameWidth).
+		Render(t.teaInput.View())
 
 	return lipgloss.JoinVertical(
 		lipgloss.Left,
@@ -69,6 +74,10 @@ func (t *TextInput) Focus() tea.Cmd {
 	return t.teaInput.Focus()
 }
 
+func (t *TextInput) HasPanelContent() bool {
+	return false
+}
+
 func (t *TextInput) GetID() string {
 	return t.id
 }
@@ -82,6 +91,8 @@ func (t *TextInput) SetValue(value string) {
 }
 
 func (t *TextInput) SetWidth(width int) {
+	t.width = width
+
 	inputFrameWidth, _ := styles.InputStyle.GetFrameSize()
 
 	t.teaInput.Width = width - inputFrameWidth

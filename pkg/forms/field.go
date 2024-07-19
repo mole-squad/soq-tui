@@ -10,6 +10,8 @@ type FormField interface {
 	Blur() tea.Cmd
 	Focus() tea.Cmd
 
+	HasPanelContent() bool
+
 	GetID() string
 
 	GetValue() string
