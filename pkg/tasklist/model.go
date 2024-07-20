@@ -8,14 +8,9 @@ import (
 	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
 	soqapi "github.com/mole-squad/soq-api/api"
 	"github.com/mole-squad/soq-tui/pkg/api"
 	"github.com/mole-squad/soq-tui/pkg/common"
-)
-
-var (
-	docStyle = lipgloss.NewStyle().Margin(1, 2)
 )
 
 type taskLoadMsg struct {
@@ -23,19 +18,19 @@ type taskLoadMsg struct {
 }
 
 type TaskListModel struct {
-	client *api.Client
-	tasks  []soqapi.TaskDTO
-	keys   keyMap
-	list   list.Model
+	client  *api.Client
+	tasks   []soqapi.TaskDTO
+	keys    keyMap
+	teaList list.Model
 }
 
-func NewTaskListModel(client *api.Client) TaskListModel {
+func NewTaskListModel(client *api.Client) common.AppView {
 	listKeys := newKeyMap()
 
-	list := list.New([]list.Item{}, list.NewDefaultDelegate(), 0, 0)
-	list.Title = "My Tasks"
+	teaList := list.New([]list.Item{}, list.NewDefaultDelegate(), 0, 0)
+	teaList.Title = "Tasks"
 
-	list.AdditionalShortHelpKeys = func() []key.Binding {
+	teaList.AdditionalShortHelpKeys = func() []key.Binding {
 		return []key.Binding{
 			listKeys.New,
 			listKeys.Edit,
@@ -44,7 +39,7 @@ func NewTaskListModel(client *api.Client) TaskListModel {
 		}
 	}
 
-	list.AdditionalFullHelpKeys = func() []key.Binding {
+	teaList.AdditionalFullHelpKeys = func() []key.Binding {
 		return []key.Binding{
 			listKeys.New,
 			listKeys.Edit,
@@ -55,9 +50,9 @@ func NewTaskListModel(client *api.Client) TaskListModel {
 	}
 
 	return TaskListModel{
-		client: client,
-		keys:   listKeys,
-		list:   list,
+		client:  client,
+		keys:    listKeys,
+		teaList: teaList,
 	}
 }
 
@@ -68,46 +63,59 @@ func (m TaskListModel) Init() tea.Cmd {
 func (m TaskListModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
-		m.list.SetSize(msg.Width, msg.Height)
-
-	case taskLoadMsg:
-		m.tasks = msg.tasks
-
-		newItems := make([]list.Item, len(m.tasks))
-
-		for i, task := range m.tasks {
-			newItems[i] = TaskListItem{task: task}
-		}
-
-		m.list.SetItems(newItems)
-
-	case common.RefreshListMsg:
-		return m, m.getTasks
+		m.teaList.SetSize(msg.Width, msg.Height)
 
 	case tea.KeyMsg:
 		return m.onKeyMsg(msg)
 	}
 
 	var cmd tea.Cmd
-	m.list, cmd = m.list.Update(msg)
+	m.teaList, cmd = m.teaList.Update(msg)
 
 	return m, cmd
 }
 
 func (m TaskListModel) View() string {
-	return m.list.View()
+	return m.teaList.View()
 }
 
-func (m TaskListModel) getTasks() tea.Msg {
+func (m TaskListModel) Blur() (tea.Model, tea.Cmd) {
+	return m, nil
+}
+
+func (m TaskListModel) Focus() (tea.Model, tea.Cmd) {
+	return m.refreshTasks()
+}
+
+func (m TaskListModel) refreshTasks() (TaskListModel, tea.Cmd) {
+	tasks, err := m.getTasks()
+	if err != nil {
+		return m, common.NewErrorMsg(err)
+	}
+
+	m.tasks = tasks
+
+	newItems := make([]list.Item, len(m.tasks))
+
+	for i, task := range m.tasks {
+		newItems[i] = TaskListItem{task: task}
+	}
+
+	m.teaList.SetItems(newItems)
+
+	return m, nil
+}
+
+func (m TaskListModel) getTasks() ([]soqapi.TaskDTO, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 
 	tasks, err := m.client.ListTasks(ctx)
 	if err != nil {
-		return common.ErrorMsg{Err: err}
+		return nil, fmt.Errorf("failed to load task list: %w", err)
 	}
 
-	return taskLoadMsg{tasks: tasks}
+	return tasks, nil
 }
 
 func (m TaskListModel) onKeyMsg(msg tea.KeyMsg) (TaskListModel, tea.Cmd) {
@@ -119,7 +127,7 @@ func (m TaskListModel) onKeyMsg(msg tea.KeyMsg) (TaskListModel, tea.Cmd) {
 		)
 
 	case key.Matches(msg, m.keys.Edit):
-		selected := m.list.SelectedItem()
+		selected := m.teaList.SelectedItem()
 		if selected == nil {
 			return m, common.NewErrorMsg(fmt.Errorf("no task selected"))
 		}
@@ -135,7 +143,7 @@ func (m TaskListModel) onKeyMsg(msg tea.KeyMsg) (TaskListModel, tea.Cmd) {
 		)
 
 	case key.Matches(msg, m.keys.Delete):
-		selected := m.list.SelectedItem()
+		selected := m.teaList.SelectedItem()
 		if selected == nil {
 			return m, common.NewErrorMsg(fmt.Errorf("no task selected"))
 		}
@@ -150,12 +158,10 @@ func (m TaskListModel) onKeyMsg(msg tea.KeyMsg) (TaskListModel, tea.Cmd) {
 			return m, common.NewErrorMsg(fmt.Errorf("failed to delete task: %w", err))
 		}
 
-		return m, tea.Sequence(
-			common.NewRefreshListMsg(),
-		)
+		return m.refreshTasks()
 
 	case key.Matches(msg, m.keys.Resolve):
-		selected := m.list.SelectedItem()
+		selected := m.teaList.SelectedItem()
 		if selected == nil {
 			return m, common.NewErrorMsg(fmt.Errorf("no task selected"))
 		}
@@ -170,16 +176,14 @@ func (m TaskListModel) onKeyMsg(msg tea.KeyMsg) (TaskListModel, tea.Cmd) {
 			return m, common.NewErrorMsg(fmt.Errorf("failed to resolve task: %w", err))
 		}
 
-		return m, tea.Sequence(
-			common.NewRefreshListMsg(),
-		)
+		return m.refreshTasks()
 
 	case key.Matches(msg, m.keys.Settings):
 		return m, common.AppStateCmd(common.AppStateSettings)
 	}
 
 	var cmd tea.Cmd
-	m.list, cmd = m.list.Update(msg)
+	m.teaList, cmd = m.teaList.Update(msg)
 
 	return m, cmd
 }

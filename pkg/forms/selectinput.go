@@ -78,7 +78,7 @@ func (s *SelectInput) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	s.listModel, listCmd = s.listModel.Update(msg)
 	s.inputModel, inputCmd = s.inputModel.Update(msg)
 
-	return s, utils.BatchIfExists(listCmd, inputCmd)
+	return s, utils.BatchIfNotNil(listCmd, inputCmd)
 }
 
 func (s SelectInput) View() string {

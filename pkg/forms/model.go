@@ -54,7 +54,7 @@ func (m Model) Init() tea.Cmd {
 		cmds = utils.AppendIfNotNil(cmds, field.Init())
 	}
 
-	return utils.BatchIfExists(cmds...)
+	return utils.BatchIfNotNil(cmds...)
 }
 
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -79,7 +79,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.fields[i], cmds = utils.GatherUpdates(field, msg, cmds)
 	}
 
-	return m, utils.BatchIfExists(cmds...)
+	return m, utils.BatchIfNotNil(cmds...)
 }
 
 func (m Model) View() string {
