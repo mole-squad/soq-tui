@@ -44,6 +44,7 @@ func NewAppModel() AppModel {
 	}
 
 	views := map[common.AppState]common.AppView{
+		common.AppStateLoading:  NewLoadingModel(),
 		common.AppStateLogin:    loginform.NewLoginFormModel(client),
 		common.AppStateTaskList: tasklist.NewTaskListModel(client),
 		common.AppStateTaskForm: taskform.NewTaskFormModel(client),
@@ -51,7 +52,7 @@ func NewAppModel() AppModel {
 	}
 
 	return AppModel{
-		appState: common.AppStateLogin,
+		appState: common.AppStateLoading,
 		client:   client,
 		keys:     newKeyMap(),
 		views:    views,
