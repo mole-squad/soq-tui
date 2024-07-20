@@ -21,6 +21,7 @@ type LoginFormModel struct {
 }
 
 const (
+	loginFormId = "loginForm"
 	usernameKey = "username"
 	passwordKey = "password"
 )
@@ -42,6 +43,7 @@ func NewLoginFormModel(client *api.Client) LoginFormModel {
 	)
 
 	model.form = forms.NewFormModel(
+		loginFormId,
 		forms.WithField(username),
 		forms.WithField(password),
 	)
@@ -57,11 +59,10 @@ func (m LoginFormModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 
 	switch msg := msg.(type) {
-	case tea.KeyMsg:
-		return m.onKeyMsg(msg)
-
 	case forms.SubmitFormMsg:
-		return m, m.onSubmit()
+		if msg.FormID == loginFormId {
+			return m, m.onSubmit()
+		}
 	}
 
 	m.form, cmd = utils.ApplyUpdate(m.form, msg)
@@ -71,14 +72,6 @@ func (m LoginFormModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (m LoginFormModel) View() string {
 	return m.form.View()
-}
-
-func (m LoginFormModel) onKeyMsg(msg tea.KeyMsg) (LoginFormModel, tea.Cmd) {
-	var cmd tea.Cmd
-
-	m.form, cmd = utils.ApplyUpdate(m.form, msg)
-
-	return m, cmd
 }
 
 func (m *LoginFormModel) onSubmit() tea.Cmd {

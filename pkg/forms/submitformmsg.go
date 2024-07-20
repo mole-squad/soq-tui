@@ -2,8 +2,14 @@ package forms
 
 import tea "github.com/charmbracelet/bubbletea"
 
-type SubmitFormMsg struct{}
+type SubmitFormMsg struct {
+	FormID string
+}
 
-func NewSubmitFormMsg() tea.Msg {
-	return SubmitFormMsg{}
+func NewSubmitFormCmd(formID string) tea.Cmd {
+	return func() tea.Msg {
+		return SubmitFormMsg{
+			FormID: formID,
+		}
+	}
 }

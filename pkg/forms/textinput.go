@@ -64,6 +64,10 @@ func (t *TextInput) View() string {
 	)
 }
 
+func (t *TextInput) ViewSidePanel() string {
+	return ""
+}
+
 func (t *TextInput) Blur() tea.Cmd {
 	t.teaInput.Blur()
 
@@ -90,7 +94,7 @@ func (t *TextInput) SetValue(value string) {
 	t.teaInput.SetValue(value)
 }
 
-func (t *TextInput) SetWidth(width int) {
+func (t *TextInput) SetSize(width int, height int) {
 	t.width = width
 
 	inputFrameWidth, _ := styles.InputStyle.GetFrameSize()
@@ -98,7 +102,7 @@ func (t *TextInput) SetWidth(width int) {
 	t.teaInput.Width = width - inputFrameWidth
 }
 
-func (t *TextInput) SetHeight(int) {}
+func (t *TextInput) SetPanelSize(width int, height int) {}
 
 func WithHiddenTextInput() TextInputOption {
 	return func(t *TextInput) {

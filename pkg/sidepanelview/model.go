@@ -3,6 +3,13 @@ package sidepanelview
 import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/mole-squad/soq-tui/pkg/styles"
+)
+
+var (
+	PanelStyle = lipgloss.NewStyle().
+		Border(lipgloss.RoundedBorder()).
+		BorderForeground(styles.HotPink)
 )
 
 type Model struct {
@@ -46,14 +53,22 @@ func (v Model) View() string {
 }
 
 func (v Model) Render(mainPanelContent string, sidePanelContent string) string {
+	sectionFrameWidth, sectionFrameHeight := PanelStyle.GetFrameSize()
+
 	content := mainPanelContent
+
 	if v.isPanelOpen {
 		contentWidth := v.width - v.panelWidth
+
+		wrappedSidePanelContent := PanelStyle.
+			Width(v.panelWidth - sectionFrameWidth).
+			Height(v.height - sectionFrameHeight).
+			Render(sidePanelContent)
 
 		content = lipgloss.JoinHorizontal(
 			lipgloss.Top,
 			lipgloss.NewStyle().Width(contentWidth).Render(mainPanelContent),
-			lipgloss.NewStyle().Width(v.panelWidth).Height(v.height).Render(sidePanelContent),
+			wrappedSidePanelContent,
 		)
 	}
 
@@ -70,6 +85,15 @@ func (v Model) GetContentWidth() int {
 	}
 
 	return v.width
+}
+
+func (v Model) GetPanelContentSize() (int, int) {
+	sectionFrameWidth, sectionFrameHeight := PanelStyle.GetFrameSize()
+
+	contentWidth := v.panelWidth - sectionFrameWidth
+	contentHeight := v.height - sectionFrameHeight
+
+	return contentWidth, contentHeight
 }
 
 func (v Model) onWindowSize(width, height int) (Model, tea.Cmd) {
