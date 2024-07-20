@@ -1,4 +1,4 @@
-package selectinput
+package forms
 
 type SelectListOption struct {
 	opt SelectOption

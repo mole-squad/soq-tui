@@ -1,6 +1,8 @@
 package taskform
 
 import (
+	"strconv"
+
 	soqapi "github.com/mole-squad/soq-api/api"
 )
 
@@ -18,6 +20,6 @@ func (f *focusAreaOption) Label() string {
 	return f.focusArea.Name
 }
 
-func (f *focusAreaOption) Value() interface{} {
-	return f.focusArea.ID
+func (f *focusAreaOption) Value() string {
+	return strconv.FormatUint(uint64(f.focusArea.ID), 10)
 }

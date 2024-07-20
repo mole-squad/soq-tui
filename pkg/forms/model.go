@@ -2,7 +2,6 @@ package forms
 
 import (
 	"fmt"
-	"log/slog"
 
 	"github.com/charmbracelet/bubbles/help"
 	"github.com/charmbracelet/bubbles/key"
@@ -14,6 +13,8 @@ import (
 )
 
 type Model struct {
+	id string
+
 	fields []FormField
 
 	focusedIdx int
@@ -29,8 +30,9 @@ type Model struct {
 
 type FormModelOption func(*Model)
 
-func NewFormModel(opts ...FormModelOption) Model {
+func NewFormModel(formID string, opts ...FormModelOption) Model {
 	model := Model{
+		id:         formID,
 		fields:     make([]FormField, 0),
 		focusedIdx: 0,
 		keys:       newFormKeyMap(),
@@ -52,7 +54,7 @@ func (m Model) Init() tea.Cmd {
 		cmds = utils.AppendIfNotNil(cmds, field.Init())
 	}
 
-	return utils.BatchIfExists(cmds)
+	return utils.BatchIfExists(cmds...)
 }
 
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -62,9 +64,22 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case tea.KeyMsg:
 		return m.onKeyMsg(msg)
+
+	case SetFieldValueMsg:
+		for i, field := range m.fields {
+			if field.GetID() == msg.FieldID {
+				m.fields[i].SetValue(msg.Value)
+				break
+			}
+		}
 	}
 
-	return m, nil
+	var cmds []tea.Cmd
+	for i, field := range m.fields {
+		m.fields[i], cmds = utils.GatherUpdates(field, msg, cmds)
+	}
+
+	return m, utils.BatchIfExists(cmds...)
 }
 
 func (m Model) View() string {
@@ -77,8 +92,13 @@ func (m Model) View() string {
 		renderedFields[i] = field.View()
 	}
 
+	sidePanelContent := ""
+	if len(m.fields) > 0 {
+		sidePanelContent = m.fields[m.focusedIdx].ViewSidePanel()
+	}
+
 	formContent := lipgloss.JoinVertical(lipgloss.Top, renderedFields...)
-	content := m.panelView.Render(formContent, "TMP side panel ")
+	content := m.panelView.Render(formContent, sidePanelContent)
 
 	return lipgloss.JoinVertical(
 		lipgloss.Left,
@@ -87,7 +107,9 @@ func (m Model) View() string {
 	)
 }
 
-func (m Model) Focus() tea.Cmd {
+func (m *Model) Focus() tea.Cmd {
+	m.focusedIdx = 0
+
 	if len(m.fields) == 0 {
 		return nil
 	}
@@ -129,8 +151,11 @@ func (m Model) onWindowMsg(msg tea.WindowSizeMsg) (Model, tea.Cmd) {
 		tea.WindowSizeMsg{Width: m.width, Height: availHeight},
 	)
 
+	panelContentWidth, panelContentHeight := m.panelView.GetPanelContentSize()
+
 	for _, field := range m.fields {
-		field.SetWidth(m.panelView.GetContentWidth())
+		field.SetSize(m.panelView.GetContentWidth(), availHeight)
+		field.SetPanelSize(panelContentWidth, panelContentHeight)
 	}
 
 	return m, cmd
@@ -144,7 +169,7 @@ func (m Model) onKeyMsg(msg tea.KeyMsg) (Model, tea.Cmd) {
 		return m.next()
 
 	case key.Matches(msg, m.keys.Submit):
-		return m, NewSubmitFormMsg
+		return m, NewSubmitFormCmd(m.id)
 	}
 
 	if len(m.fields) == 0 {
@@ -176,10 +201,14 @@ func (m Model) next() (Model, tea.Cmd) {
 		m.fields[m.focusedIdx].HasPanelContent(),
 	)
 
-	slog.Info("panel width", "width", m.panelView.GetContentWidth())
+	help := m.help.View(m.keys)
+	availHeight := m.height - lipgloss.Height(help)
+
+	panelContentWidth, panelContentHeight := m.panelView.GetPanelContentSize()
 
 	for _, field := range m.fields {
-		field.SetWidth(m.panelView.GetContentWidth())
+		field.SetSize(m.panelView.GetContentWidth(), availHeight)
+		field.SetPanelSize(panelContentWidth, panelContentHeight)
 	}
 
 	return m, nil
