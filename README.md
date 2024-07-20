@@ -27,4 +27,4 @@ export GOPRIVATE=github.com/mole-squad/*
  - [Taskfile](https://taskfile.dev/)
 
 ## Terminal UI
- - [BuubleTea](https://github.com/charmbracelet/bubbletea)
+ - [BubbleTea](https://github.com/charmbracelet/bubbletea)
