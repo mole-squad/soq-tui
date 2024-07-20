@@ -26,7 +26,7 @@ const (
 	passwordKey = "password"
 )
 
-func NewLoginFormModel(client *api.Client) LoginFormModel {
+func NewLoginFormModel(client *api.Client) common.AppView {
 	model := LoginFormModel{
 		client: client,
 	}
@@ -72,6 +72,14 @@ func (m LoginFormModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (m LoginFormModel) View() string {
 	return m.form.View()
+}
+
+func (m LoginFormModel) Blur() (tea.Model, tea.Cmd) {
+	return m, nil
+}
+
+func (m LoginFormModel) Focus() (tea.Model, tea.Cmd) {
+	return m, nil
 }
 
 func (m *LoginFormModel) onSubmit() tea.Cmd {

@@ -19,7 +19,7 @@ type SettingsModel struct {
 	width int
 }
 
-func NewSettingsModel(client *api.Client) SettingsModel {
+func NewSettingsModel(client *api.Client) common.AppView {
 	return SettingsModel{
 		client: client,
 		keys:   newKeyMap(),
@@ -50,6 +50,14 @@ func (m SettingsModel) View() string {
 	sections = append(sections, lipgloss.NewStyle().Width(m.width).Render(helpContent))
 
 	return styles.PageWrapperStyle.Render(lipgloss.JoinVertical(lipgloss.Left, sections...))
+}
+
+func (m SettingsModel) Blur() (tea.Model, tea.Cmd) {
+	return m, nil
+}
+
+func (m SettingsModel) Focus() (tea.Model, tea.Cmd) {
+	return m, nil
 }
 
 func (m SettingsModel) onWindowMsg(msg tea.WindowSizeMsg) (SettingsModel, tea.Cmd) {

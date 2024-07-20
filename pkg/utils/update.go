@@ -27,10 +27,37 @@ func AppendIfNotNil(cmds []tea.Cmd, cmd tea.Cmd) []tea.Cmd {
 	return cmds
 }
 
-func BatchIfExists(cmds ...tea.Cmd) tea.Cmd {
-	if len(cmds) > 0 {
-		return tea.Batch(cmds...)
+func BatchIfNotNil(cmds ...tea.Cmd) tea.Cmd {
+	filteredCmds := FilterNilCmds(cmds)
+
+	if len(filteredCmds) == 0 {
+		return nil
 	}
 
-	return nil
+	return tea.Batch(cmds...)
+}
+
+func SequenceIfNotNil(cmds ...tea.Cmd) tea.Cmd {
+	filteredCmds := FilterNilCmds(cmds)
+
+	if len(filteredCmds) == 0 {
+		return nil
+	}
+
+	return tea.Sequence(cmds...)
+}
+
+func FilterNilCmds(cmds []tea.Cmd) []tea.Cmd {
+	if len(cmds) == 0 {
+		return cmds
+	}
+
+	filteredCmds := make([]tea.Cmd, 0, len(cmds))
+	for _, cmd := range cmds {
+		if cmd != nil {
+			filteredCmds = append(filteredCmds, cmd)
+		}
+	}
+
+	return filteredCmds
 }

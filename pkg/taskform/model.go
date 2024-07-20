@@ -33,7 +33,7 @@ type TaskFormModel struct {
 	form forms.Model
 }
 
-func NewTaskFormModel(client *api.Client) TaskFormModel {
+func NewTaskFormModel(client *api.Client) common.AppView {
 	summary := forms.NewTextInput(summaryFieldID, "Summary")
 	notes := forms.NewTextInput(notesFieldID, "Notes")
 	focusArea := forms.NewSelectInput(focusAreaFieldID, "Focus Area")
@@ -87,6 +87,14 @@ func (m TaskFormModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (m TaskFormModel) View() string {
 	return m.form.View()
+}
+
+func (m TaskFormModel) Blur() (tea.Model, tea.Cmd) {
+	return m, nil
+}
+
+func (m TaskFormModel) Focus() (tea.Model, tea.Cmd) {
+	return m, nil
 }
 
 func (m *TaskFormModel) refreshFocusAreas() tea.Cmd {
@@ -185,10 +193,7 @@ func (m *TaskFormModel) submitTask() tea.Cmd {
 		return common.NewErrorMsg(err)
 	}
 
-	return tea.Sequence(
-		common.NewRefreshListMsg(),
-		common.AppStateCmd(common.AppStateTaskList),
-	)
+	return common.AppStateCmd(common.AppStateTaskList)
 }
 
 func (m *TaskFormModel) createTask(summary, notes string, focusAreaID uint) error {

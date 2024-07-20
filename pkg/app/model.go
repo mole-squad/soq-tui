@@ -27,10 +27,7 @@ type AppModel struct {
 	appState common.AppState
 	error
 
-	loginForm loginform.LoginFormModel
-	taskForm  taskform.TaskFormModel
-	taskList  tasklist.TaskListModel
-	settings  settings.SettingsModel
+	views map[common.AppState]common.AppView
 
 	keys keyMap
 
@@ -46,32 +43,36 @@ func NewAppModel() AppModel {
 		slog.Error("failed to load token", "error", err)
 	}
 
+	views := map[common.AppState]common.AppView{
+		common.AppStateLogin:    loginform.NewLoginFormModel(client),
+		common.AppStateTaskList: tasklist.NewTaskListModel(client),
+		common.AppStateTaskForm: taskform.NewTaskFormModel(client),
+		common.AppStateSettings: settings.NewSettingsModel(client),
+	}
+
 	return AppModel{
-		appState:  common.AppStateLogin,
-		client:    client,
-		keys:      newKeyMap(),
-		loginForm: loginform.NewLoginFormModel(client),
-		taskForm:  taskform.NewTaskFormModel(client),
-		taskList:  tasklist.NewTaskListModel(client),
-		settings:  settings.NewSettingsModel(client),
+		appState: common.AppStateLogin,
+		client:   client,
+		keys:     newKeyMap(),
+		views:    views,
 	}
 }
 
 func (m AppModel) Init() tea.Cmd {
-	initCmd := tea.Batch(
-		m.loginForm.Init(),
-		m.taskList.Init(),
-		m.taskForm.Init(),
-	)
+	var cmds []tea.Cmd
 
-	if !m.client.IsAuthenticated() {
-		return initCmd
+	for _, view := range m.views {
+		cmds = utils.AppendIfNotNil(cmds, view.Init())
 	}
 
-	return tea.Sequence(initCmd, tea.Batch(
-		common.NewRefreshListMsg(),
-		common.AppStateCmd(common.AppStateTaskList),
-	))
+	initCmd := utils.BatchIfNotNil(cmds...)
+
+	navCmd := common.AppStateCmd(common.AppStateLogin)
+	if m.client.IsAuthenticated() {
+		navCmd = common.AppStateCmd(common.AppStateTaskList)
+	}
+
+	return tea.Sequence(initCmd, navCmd)
 }
 
 func (m AppModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -92,10 +93,7 @@ func (m AppModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, common.NewErrorMsg(err)
 		}
 
-		return m, tea.Sequence(
-			common.NewRefreshListMsg(),
-			common.AppStateCmd(common.AppStateTaskList),
-		)
+		return m, common.AppStateCmd(common.AppStateTaskList)
 
 	case tea.WindowSizeMsg:
 		return m.onWindowSizeMsg(msg)
@@ -104,7 +102,7 @@ func (m AppModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m.onKeyMsg(msg)
 
 	case common.AppStateMsg:
-		m.appState = msg.NewState
+		return m.onAppStateMsg(msg)
 	}
 
 	return m.applyUpdates(msg)
@@ -123,32 +121,34 @@ func (m AppModel) renderContent() string {
 		return errorStyle.Width(m.width).Render(fmt.Sprintf("Error: %s\n", m.error))
 	}
 
-	switch m.appState {
-	case common.AppStateLogin:
-		return m.loginForm.View()
+	return m.views[m.appState].View()
+}
 
-	case common.AppStateTaskList:
-		return m.taskList.View()
+func (m AppModel) onAppStateMsg(msg common.AppStateMsg) (tea.Model, tea.Cmd) {
+	var (
+		blurCmd  tea.Cmd
+		focusCmd tea.Cmd
+	)
 
-	case common.AppStateTaskForm:
-		return m.taskForm.View()
+	blurredView, blurCmd := m.views[m.appState].Blur()
+	m.views[m.appState] = blurredView.(common.AppView)
 
-	case common.AppStateSettings:
-		return m.settings.View()
-	}
+	m.appState = msg.NewState
 
-	return "No state"
+	focusedView, focusCmd := m.views[m.appState].Focus()
+	m.views[m.appState] = focusedView.(common.AppView)
+
+	return m, utils.SequenceIfNotNil(blurCmd, focusCmd)
 }
 
 func (m AppModel) applyUpdates(msg tea.Msg) (tea.Model, tea.Cmd) {
 	cmds := make([]tea.Cmd, 0)
 
-	m.loginForm, cmds = utils.GatherUpdates(m.loginForm, msg, cmds)
-	m.taskList, cmds = utils.GatherUpdates(m.taskList, msg, cmds)
-	m.taskForm, cmds = utils.GatherUpdates(m.taskForm, msg, cmds)
-	m.settings, cmds = utils.GatherUpdates(m.settings, msg, cmds)
+	for key, view := range m.views {
+		m.views[key], cmds = utils.GatherUpdates(view, msg, cmds)
+	}
 
-	return m, utils.BatchIfExists(cmds...)
+	return m, utils.BatchIfNotNil(cmds...)
 }
 
 func (m AppModel) onWindowSizeMsg(msg tea.WindowSizeMsg) (tea.Model, tea.Cmd) {
@@ -165,31 +165,13 @@ func (m AppModel) onWindowSizeMsg(msg tea.WindowSizeMsg) (tea.Model, tea.Cmd) {
 }
 
 func (m AppModel) onKeyMsg(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
-	var cmd tea.Cmd
-
 	switch {
 	case key.Matches(msg, m.keys.Quit):
 		return m, tea.Quit
 	}
 
-	switch m.appState {
+	updatedView, cmd := m.views[m.appState].Update(msg)
+	m.views[m.appState] = updatedView.(common.AppView)
 
-	case common.AppStateLogin:
-		m.loginForm, cmd = utils.ApplyUpdate(m.loginForm, msg)
-		return m, cmd
-
-	case common.AppStateTaskList:
-		m.taskList, cmd = utils.ApplyUpdate(m.taskList, msg)
-		return m, cmd
-
-	case common.AppStateTaskForm:
-		m.taskForm, cmd = utils.ApplyUpdate(m.taskForm, msg)
-		return m, cmd
-
-	case common.AppStateSettings:
-		m.settings, cmd = utils.ApplyUpdate(m.settings, msg)
-		return m, cmd
-	}
-
-	return m, nil
+	return m, cmd
 }
