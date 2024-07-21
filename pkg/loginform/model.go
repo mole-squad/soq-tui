@@ -7,6 +7,7 @@ import (
 	"github.com/mole-squad/soq-tui/pkg/api"
 	"github.com/mole-squad/soq-tui/pkg/common"
 	"github.com/mole-squad/soq-tui/pkg/forms"
+	"github.com/mole-squad/soq-tui/pkg/logger"
 	"github.com/mole-squad/soq-tui/pkg/utils"
 )
 
@@ -17,6 +18,7 @@ const (
 
 type LoginFormModel struct {
 	client *api.Client
+	logger *logger.Logger
 	form   forms.Model
 }
 
@@ -26,9 +28,10 @@ const (
 	passwordKey = "password"
 )
 
-func NewLoginFormModel(client *api.Client) common.AppView {
+func NewLoginFormModel(logger *logger.Logger, client *api.Client) common.AppView {
 	model := LoginFormModel{
 		client: client,
+		logger: logger,
 	}
 
 	username := forms.NewTextInput(

@@ -7,11 +7,13 @@ import (
 	"github.com/charmbracelet/lipgloss"
 	"github.com/mole-squad/soq-tui/pkg/api"
 	"github.com/mole-squad/soq-tui/pkg/common"
+	"github.com/mole-squad/soq-tui/pkg/logger"
 	"github.com/mole-squad/soq-tui/pkg/styles"
 )
 
 type SettingsModel struct {
 	client *api.Client
+	logger *logger.Logger
 
 	keys keyMap
 	help help.Model
@@ -19,9 +21,10 @@ type SettingsModel struct {
 	width int
 }
 
-func NewSettingsModel(client *api.Client) common.AppView {
+func NewSettingsModel(logger *logger.Logger, client *api.Client) common.AppView {
 	return SettingsModel{
 		client: client,
+		logger: logger,
 		help:   help.New(),
 		keys:   newKeyMap(),
 	}

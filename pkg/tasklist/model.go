@@ -11,6 +11,7 @@ import (
 	soqapi "github.com/mole-squad/soq-api/api"
 	"github.com/mole-squad/soq-tui/pkg/api"
 	"github.com/mole-squad/soq-tui/pkg/common"
+	"github.com/mole-squad/soq-tui/pkg/logger"
 )
 
 type taskLoadMsg struct {
@@ -19,12 +20,13 @@ type taskLoadMsg struct {
 
 type TaskListModel struct {
 	client  *api.Client
+	logger  *logger.Logger
 	tasks   []soqapi.TaskDTO
 	keys    keyMap
 	teaList list.Model
 }
 
-func NewTaskListModel(client *api.Client) common.AppView {
+func NewTaskListModel(logger *logger.Logger, client *api.Client) common.AppView {
 	listKeys := newKeyMap()
 
 	teaList := list.New([]list.Item{}, list.NewDefaultDelegate(), 0, 0)
@@ -51,6 +53,7 @@ func NewTaskListModel(client *api.Client) common.AppView {
 
 	return TaskListModel{
 		client:  client,
+		logger:  logger,
 		keys:    listKeys,
 		teaList: teaList,
 	}

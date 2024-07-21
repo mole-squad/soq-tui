@@ -43,11 +43,9 @@ tasks:
           GOARCH: 'amd64'
 
   tui:
-    env:
-      DEBUG: 1
     cmds:
       - task: build
-      - bin/qt
+      - bin/qt -d -c ~/.soq-dev
 
   kill:
     cmds:

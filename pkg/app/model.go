@@ -2,7 +2,6 @@ package app
 
 import (
 	"fmt"
-	"log/slog"
 
 	"github.com/charmbracelet/bubbles/key"
 	tea "github.com/charmbracelet/bubbletea"
@@ -11,6 +10,7 @@ import (
 	"github.com/mole-squad/soq-tui/pkg/common"
 	"github.com/mole-squad/soq-tui/pkg/focusareaform"
 	"github.com/mole-squad/soq-tui/pkg/focusarealist"
+	"github.com/mole-squad/soq-tui/pkg/logger"
 	"github.com/mole-squad/soq-tui/pkg/loginform"
 	"github.com/mole-squad/soq-tui/pkg/settings"
 	"github.com/mole-squad/soq-tui/pkg/styles"
@@ -26,6 +26,11 @@ var (
 type AppModel struct {
 	client *api.Client
 
+	logger *logger.Logger
+
+	configDir string
+	debug     bool
+
 	appState common.AppState
 	error
 
@@ -37,33 +42,41 @@ type AppModel struct {
 	width    int
 }
 
-func NewAppModel() AppModel {
-	client := api.NewClient()
+type AppModelOption func(*AppModel)
 
-	err := client.LoadToken()
-	if err != nil {
-		slog.Error("failed to load token", "error", err)
-	}
-
-	views := map[common.AppState]common.AppView{
-		common.AppStateLoading: NewLoadingModel(),
-		common.AppStateLogin:   loginform.NewLoginFormModel(client),
-
-		common.AppStateFocusAreaList: focusarealist.New(client),
-		common.AppStateFocusAreaForm: focusareaform.New(client),
-
-		common.AppStateTaskList: tasklist.NewTaskListModel(client),
-		common.AppStateTaskForm: taskform.NewTaskFormModel(client),
-
-		common.AppStateSettings: settings.NewSettingsModel(client),
-	}
-
-	return AppModel{
+func NewAppModel(opts ...AppModelOption) AppModel {
+	model := AppModel{
 		appState: common.AppStateLoading,
-		client:   client,
+		debug:    false,
 		keys:     newKeyMap(),
-		views:    views,
 	}
+
+	for _, opt := range opts {
+		opt(&model)
+	}
+
+	model.logger = logger.NewLogger(model.debug)
+	model.client = api.NewClient(model.logger, model.configDir)
+
+	err := model.client.LoadToken()
+	if err != nil {
+		model.logger.Error("failed to load token", "error", err)
+	}
+
+	model.views = map[common.AppState]common.AppView{
+		common.AppStateLoading: NewLoadingModel(),
+		common.AppStateLogin:   loginform.NewLoginFormModel(model.logger, model.client),
+
+		common.AppStateFocusAreaList: focusarealist.New(model.logger, model.client),
+		common.AppStateFocusAreaForm: focusareaform.New(model.logger, model.client),
+
+		common.AppStateTaskList: tasklist.NewTaskListModel(model.logger, model.client),
+		common.AppStateTaskForm: taskform.NewTaskFormModel(model.logger, model.client),
+
+		common.AppStateSettings: settings.NewSettingsModel(model.logger, model.client),
+	}
+
+	return model
 }
 
 func (m AppModel) Init() tea.Cmd {
@@ -84,8 +97,6 @@ func (m AppModel) Init() tea.Cmd {
 }
 
 func (m AppModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	slog.Debug(fmt.Sprintf("AppModel.Update: %T", msg))
-
 	// TODO add global back control
 	switch msg := msg.(type) {
 
@@ -183,4 +194,16 @@ func (m AppModel) onKeyMsg(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	m.views[m.appState] = updatedView.(common.AppView)
 
 	return m, cmd
+}
+
+func WithConfigDir(dir string) AppModelOption {
+	return func(m *AppModel) {
+		m.configDir = dir
+	}
+}
+
+func WithDebugMode(debug bool) AppModelOption {
+	return func(m *AppModel) {
+		m.debug = debug
+	}
 }

@@ -10,16 +10,18 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/mole-squad/soq-tui/pkg/api"
 	"github.com/mole-squad/soq-tui/pkg/common"
+	"github.com/mole-squad/soq-tui/pkg/logger"
 )
 
 type Model struct {
 	client *api.Client
+	logger *logger.Logger
 
 	keys    keyMap
 	teaList list.Model
 }
 
-func New(client *api.Client) common.AppView {
+func New(logger *logger.Logger, client *api.Client) common.AppView {
 	listKeys := newKeyMap()
 
 	teaList := list.New([]list.Item{}, list.NewDefaultDelegate(), 0, 0)
@@ -45,6 +47,7 @@ func New(client *api.Client) common.AppView {
 
 	return Model{
 		client:  client,
+		logger:  logger,
 		keys:    listKeys,
 		teaList: teaList,
 	}

@@ -4,25 +4,14 @@ import (
 	"fmt"
 	"os"
 
-	tea "github.com/charmbracelet/bubbletea"
-	"github.com/mole-squad/soq-tui/pkg/app"
+	"github.com/mole-squad/soq-tui/pkg/cmd"
 )
 
 func main() {
-	m := app.NewAppModel()
-
-	if len(os.Getenv("DEBUG")) > 0 {
-		f, err := tea.LogToFile("debug.log", "")
-		if err != nil {
-			fmt.Println("fatal:", err)
-			os.Exit(1)
-		}
-
-		defer f.Close()
-	}
-
-	if _, err := tea.NewProgram(m, tea.WithAltScreen()).Run(); err != nil {
+	if err := cmd.Execute(); err != nil {
 		fmt.Println("Error running program:", err)
 		os.Exit(1)
 	}
+
+	os.Exit(0)
 }
