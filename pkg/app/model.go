@@ -9,6 +9,7 @@ import (
 	"github.com/charmbracelet/lipgloss"
 	"github.com/mole-squad/soq-tui/pkg/api"
 	"github.com/mole-squad/soq-tui/pkg/common"
+	"github.com/mole-squad/soq-tui/pkg/focusareaform"
 	"github.com/mole-squad/soq-tui/pkg/focusarealist"
 	"github.com/mole-squad/soq-tui/pkg/loginform"
 	"github.com/mole-squad/soq-tui/pkg/settings"
@@ -45,12 +46,16 @@ func NewAppModel() AppModel {
 	}
 
 	views := map[common.AppState]common.AppView{
-		common.AppStateLoading:       NewLoadingModel(),
-		common.AppStateLogin:         loginform.NewLoginFormModel(client),
+		common.AppStateLoading: NewLoadingModel(),
+		common.AppStateLogin:   loginform.NewLoginFormModel(client),
+
 		common.AppStateFocusAreaList: focusarealist.New(client),
-		common.AppStateTaskList:      tasklist.NewTaskListModel(client),
-		common.AppStateTaskForm:      taskform.NewTaskFormModel(client),
-		common.AppStateSettings:      settings.NewSettingsModel(client),
+		common.AppStateFocusAreaForm: focusareaform.New(client),
+
+		common.AppStateTaskList: tasklist.NewTaskListModel(client),
+		common.AppStateTaskForm: taskform.NewTaskFormModel(client),
+
+		common.AppStateSettings: settings.NewSettingsModel(client),
 	}
 
 	return AppModel{
@@ -81,6 +86,7 @@ func (m AppModel) Init() tea.Cmd {
 func (m AppModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	slog.Debug(fmt.Sprintf("AppModel.Update: %T", msg))
 
+	// TODO add global back control
 	switch msg := msg.(type) {
 
 	case common.QuitMsg:
