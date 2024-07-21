@@ -22,6 +22,7 @@ type SettingsModel struct {
 func NewSettingsModel(client *api.Client) common.AppView {
 	return SettingsModel{
 		client: client,
+		help:   help.New(),
 		keys:   newKeyMap(),
 	}
 }
@@ -72,6 +73,9 @@ func (m SettingsModel) onKeyMsg(msg tea.KeyMsg) (SettingsModel, tea.Cmd) {
 	switch {
 	case key.Matches(msg, m.keys.Back):
 		return m, common.AppStateCmd(common.AppStateTaskList)
+
+	case key.Matches(msg, m.keys.FocusAreas):
+		return m, common.AppStateCmd(common.AppStateFocusAreaList)
 	}
 
 	return m, nil

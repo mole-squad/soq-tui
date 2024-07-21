@@ -389,6 +389,39 @@ func (c *Client) ListFocusAreas(ctx context.Context) ([]soqapi.FocusAreaDTO, err
 	return focusAreasResp, nil
 }
 
+func (c *Client) DeleteFocusArea(ctx context.Context, focusAreaID uint) error {
+	reqUrl := url.URL{
+		Scheme: "http",
+		Host:   c.apiHost,
+		Path:   fmt.Sprintf("/focusareas/%d", focusAreaID),
+	}
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodDelete, reqUrl.String(), nil)
+	if err != nil {
+		return fmt.Errorf("error building delete focus area request: %w", err)
+	}
+
+	req.Header = c.buildHeaders()
+
+	res, err := c.httpClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("error executing delete focus area request: %w", err)
+	}
+
+	defer res.Body.Close()
+
+	if res.StatusCode == http.StatusUnauthorized {
+		c.ClearToken()
+		return fmt.Errorf("unauthorized")
+	}
+
+	if res.StatusCode != http.StatusNoContent {
+		return fmt.Errorf("unexpected status code: %d", res.StatusCode)
+	}
+
+	return nil
+}
+
 func (c *Client) buildHeaders() http.Header {
 	headers := http.Header{}
 
