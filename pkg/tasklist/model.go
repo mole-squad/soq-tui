@@ -101,9 +101,7 @@ func (m TaskListModel) refreshTasks() (TaskListModel, tea.Cmd) {
 		newItems[i] = TaskListItem{task: task}
 	}
 
-	m.teaList.SetItems(newItems)
-
-	return m, nil
+	return m, m.teaList.SetItems(newItems)
 }
 
 func (m TaskListModel) getTasks() ([]soqapi.TaskDTO, error) {
@@ -127,56 +125,13 @@ func (m TaskListModel) onKeyMsg(msg tea.KeyMsg) (TaskListModel, tea.Cmd) {
 		)
 
 	case key.Matches(msg, m.keys.Edit):
-		selected := m.teaList.SelectedItem()
-		if selected == nil {
-			return m, common.NewErrorMsg(fmt.Errorf("no task selected"))
-		}
-
-		taskItem, ok := selected.(TaskListItem)
-		if !ok {
-			return m, common.NewErrorMsg(fmt.Errorf("unexpected task item type"))
-		}
-
-		return m, tea.Sequence(
-			common.NewSelectTaskMsg(taskItem.task),
-			common.AppStateCmd(common.AppStateTaskForm),
-		)
+		return m.onEditTask()
 
 	case key.Matches(msg, m.keys.Delete):
-		selected := m.teaList.SelectedItem()
-		if selected == nil {
-			return m, common.NewErrorMsg(fmt.Errorf("no task selected"))
-		}
-
-		taskItem, ok := selected.(TaskListItem)
-		if !ok {
-			return m, common.NewErrorMsg(fmt.Errorf("unexpected task item type"))
-		}
-
-		err := m.client.DeleteTask(context.Background(), taskItem.task.ID)
-		if err != nil {
-			return m, common.NewErrorMsg(fmt.Errorf("failed to delete task: %w", err))
-		}
-
-		return m.refreshTasks()
+		return m.onDeleteTask()
 
 	case key.Matches(msg, m.keys.Resolve):
-		selected := m.teaList.SelectedItem()
-		if selected == nil {
-			return m, common.NewErrorMsg(fmt.Errorf("no task selected"))
-		}
-
-		taskItem, ok := selected.(TaskListItem)
-		if !ok {
-			return m, common.NewErrorMsg(fmt.Errorf("unexpected task item type"))
-		}
-
-		_, err := m.client.ResolveTask(context.Background(), taskItem.task.ID)
-		if err != nil {
-			return m, common.NewErrorMsg(fmt.Errorf("failed to resolve task: %w", err))
-		}
-
-		return m.refreshTasks()
+		return m.onResolveTask()
 
 	case key.Matches(msg, m.keys.Settings):
 		return m, common.AppStateCmd(common.AppStateSettings)
@@ -186,4 +141,59 @@ func (m TaskListModel) onKeyMsg(msg tea.KeyMsg) (TaskListModel, tea.Cmd) {
 	m.teaList, cmd = m.teaList.Update(msg)
 
 	return m, cmd
+}
+
+func (m TaskListModel) onEditTask() (TaskListModel, tea.Cmd) {
+	selected := m.teaList.SelectedItem()
+	if selected == nil {
+		return m, common.NewErrorMsg(fmt.Errorf("no task selected"))
+	}
+
+	taskItem, ok := selected.(TaskListItem)
+	if !ok {
+		return m, common.NewErrorMsg(fmt.Errorf("unexpected task item type"))
+	}
+
+	return m, tea.Sequence(
+		common.NewSelectTaskMsg(taskItem.task),
+		common.AppStateCmd(common.AppStateTaskForm),
+	)
+}
+
+func (m TaskListModel) onDeleteTask() (TaskListModel, tea.Cmd) {
+	selected := m.teaList.SelectedItem()
+	if selected == nil {
+		return m, common.NewErrorMsg(fmt.Errorf("no task selected"))
+	}
+
+	taskItem, ok := selected.(TaskListItem)
+	if !ok {
+		return m, common.NewErrorMsg(fmt.Errorf("unexpected task item type"))
+	}
+
+	err := m.client.DeleteTask(context.Background(), taskItem.task.ID)
+	if err != nil {
+		return m, common.NewErrorMsg(fmt.Errorf("failed to delete task: %w", err))
+	}
+
+	return m.refreshTasks()
+}
+
+func (m TaskListModel) onResolveTask() (TaskListModel, tea.Cmd) {
+	selected := m.teaList.SelectedItem()
+	if selected == nil {
+		return m, common.NewErrorMsg(fmt.Errorf("no task selected"))
+	}
+
+	taskItem, ok := selected.(TaskListItem)
+	if !ok {
+		return m, common.NewErrorMsg(fmt.Errorf("unexpected task item type"))
+	}
+
+	_, err := m.client.ResolveTask(context.Background(), taskItem.task.ID)
+	if err != nil {
+		return m, common.NewErrorMsg(fmt.Errorf("failed to resolve task: %w", err))
+	}
+
+	return m.refreshTasks()
 }
