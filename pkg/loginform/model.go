@@ -16,7 +16,7 @@ const (
 	passwordInputIdx
 )
 
-type LoginFormModel struct {
+type Model struct {
 	client *api.Client
 	logger *logger.Logger
 	form   forms.Model
@@ -28,8 +28,8 @@ const (
 	passwordKey = "password"
 )
 
-func NewLoginFormModel(logger *logger.Logger, client *api.Client) common.AppView {
-	model := LoginFormModel{
+func New(logger *logger.Logger, client *api.Client) common.AppView {
+	model := Model{
 		client: client,
 		logger: logger,
 	}
@@ -45,7 +45,7 @@ func NewLoginFormModel(logger *logger.Logger, client *api.Client) common.AppView
 		forms.WithHiddenTextInput(),
 	)
 
-	model.form = forms.NewFormModel(
+	model.form = forms.New(
 		loginFormId,
 		forms.WithField(username),
 		forms.WithField(password),
@@ -54,11 +54,11 @@ func NewLoginFormModel(logger *logger.Logger, client *api.Client) common.AppView
 	return model
 }
 
-func (m LoginFormModel) Init() tea.Cmd {
+func (m Model) Init() tea.Cmd {
 	return m.form.Focus()
 }
 
-func (m LoginFormModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 
 	switch msg := msg.(type) {
@@ -73,19 +73,19 @@ func (m LoginFormModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, cmd
 }
 
-func (m LoginFormModel) View() string {
+func (m Model) View() string {
 	return m.form.View()
 }
 
-func (m LoginFormModel) Blur() (tea.Model, tea.Cmd) {
+func (m Model) Blur() (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
-func (m LoginFormModel) Focus() (tea.Model, tea.Cmd) {
+func (m Model) Focus() (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
-func (m *LoginFormModel) onSubmit() tea.Cmd {
+func (m *Model) onSubmit() tea.Cmd {
 	values := m.form.Value()
 
 	username := values[usernameKey]

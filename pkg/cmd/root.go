@@ -23,7 +23,7 @@ var rootCmd = &cobra.Command{
 		debug, _ := cmd.Flags().GetBool(debugFlagKey)
 		configDir, _ := cmd.Flags().GetString(configDirFlagKey)
 
-		m := app.NewAppModel(
+		m := app.New(
 			app.WithDebugMode(debug),
 			app.WithConfigDir(configDir),
 		)

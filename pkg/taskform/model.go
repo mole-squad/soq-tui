@@ -22,7 +22,7 @@ const (
 	focusAreaFieldID = "focusarea"
 )
 
-type TaskFormModel struct {
+type Model struct {
 	client *api.Client
 	logger *logger.Logger
 
@@ -34,30 +34,30 @@ type TaskFormModel struct {
 	form forms.Model
 }
 
-func NewTaskFormModel(logger *logger.Logger, client *api.Client) common.AppView {
+func New(logger *logger.Logger, client *api.Client) common.AppView {
 	summary := forms.NewTextInput(summaryFieldID, "Summary")
 	notes := forms.NewTextInput(notesFieldID, "Notes")
 	focusArea := forms.NewSelectInput(focusAreaFieldID, "Focus Area")
 
-	form := forms.NewFormModel(
+	form := forms.New(
 		taskFormID,
 		forms.WithField(summary),
 		forms.WithField(notes),
 		forms.WithField(focusArea),
 	)
 
-	return TaskFormModel{
+	return Model{
 		client: client,
 		logger: logger,
 		form:   form,
 	}
 }
 
-func (m TaskFormModel) Init() tea.Cmd {
+func (m Model) Init() tea.Cmd {
 	return m.form.Focus()
 }
 
-func (m TaskFormModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 
 	switch msg := msg.(type) {
@@ -78,19 +78,19 @@ func (m TaskFormModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, cmd
 }
 
-func (m TaskFormModel) View() string {
+func (m Model) View() string {
 	return m.form.View()
 }
 
-func (m TaskFormModel) Blur() (tea.Model, tea.Cmd) {
+func (m Model) Blur() (tea.Model, tea.Cmd) {
 	return m, m.form.Blur()
 }
 
-func (m TaskFormModel) Focus() (tea.Model, tea.Cmd) {
+func (m Model) Focus() (tea.Model, tea.Cmd) {
 	return m, m.form.Focus()
 }
 
-func (m *TaskFormModel) refreshFocusAreas() tea.Cmd {
+func (m *Model) refreshFocusAreas() tea.Cmd {
 	m.logger.Debug("Refreshing focus areas")
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
@@ -113,7 +113,7 @@ func (m *TaskFormModel) refreshFocusAreas() tea.Cmd {
 	return forms.NewSetSelectOptionsCmd(focusAreaFieldID, opts)
 }
 
-func (m *TaskFormModel) onTaskCreate() tea.Cmd {
+func (m *Model) onTaskCreate() tea.Cmd {
 	refreshCmd := m.refreshFocusAreas()
 
 	m.logger.Debug("Creating new task")
@@ -141,7 +141,7 @@ func (m *TaskFormModel) onTaskCreate() tea.Cmd {
 	)
 }
 
-func (m *TaskFormModel) onTaskSelect(task soqapi.TaskDTO) tea.Cmd {
+func (m *Model) onTaskSelect(task soqapi.TaskDTO) tea.Cmd {
 	refreshCmd := m.refreshFocusAreas()
 
 	m.logger.Debug("Editing task", "task", task)
@@ -163,7 +163,7 @@ func (m *TaskFormModel) onTaskSelect(task soqapi.TaskDTO) tea.Cmd {
 	)
 }
 
-func (m *TaskFormModel) submitTask() tea.Cmd {
+func (m *Model) submitTask() tea.Cmd {
 	values := m.form.Value()
 
 	summary := values[summaryFieldID]
@@ -189,7 +189,7 @@ func (m *TaskFormModel) submitTask() tea.Cmd {
 	return common.AppStateCmd(common.AppStateTaskList)
 }
 
-func (m *TaskFormModel) createTask(summary, notes string, focusAreaID uint) error {
+func (m *Model) createTask(summary, notes string, focusAreaID uint) error {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 
@@ -207,7 +207,7 @@ func (m *TaskFormModel) createTask(summary, notes string, focusAreaID uint) erro
 	return nil
 }
 
-func (m *TaskFormModel) updateTask(summary, notes string, focusAreaID uint) error {
+func (m *Model) updateTask(summary, notes string, focusAreaID uint) error {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 

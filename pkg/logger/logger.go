@@ -12,7 +12,7 @@ type Logger struct {
 	logger *slog.Logger
 }
 
-func NewLogger(debug bool) *Logger {
+func New(debug bool) *Logger {
 	level := slog.LevelInfo
 	if debug {
 		level = slog.LevelDebug

@@ -30,7 +30,7 @@ type Model struct {
 
 type FormModelOption func(*Model)
 
-func NewFormModel(formID string, opts ...FormModelOption) Model {
+func New(formID string, opts ...FormModelOption) Model {
 	model := Model{
 		id:         formID,
 		fields:     make([]FormField, 0),
