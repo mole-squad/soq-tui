@@ -88,12 +88,13 @@ func (m Model) onKeyMsg(msg tea.KeyMsg) (Model, tea.Cmd) {
 		return m, common.AppStateCmd(common.AppStateSettings)
 
 	case key.Matches(msg, m.keys.New):
-		// TODO emit create msg
-		return m, common.AppStateCmd(common.AppStateFocusAreaForm)
+		return m, tea.Sequence(
+			common.NewCreateFocusAreaMsg(),
+			common.AppStateCmd(common.AppStateFocusAreaForm),
+		)
 
 	case key.Matches(msg, m.keys.Edit):
-		// TODO emit edit msg
-		return m, common.AppStateCmd(common.AppStateFocusAreaForm)
+		return m.onEdit()
 
 	case key.Matches(msg, m.keys.Delete):
 		return m.onDelete()
@@ -120,6 +121,23 @@ func (m Model) refreshFocusAreas() (Model, tea.Cmd) {
 	}
 
 	return m, m.teaList.SetItems(newItems)
+}
+
+func (m Model) onEdit() (Model, tea.Cmd) {
+	selected := m.teaList.SelectedItem()
+	if selected == nil {
+		return m, common.NewErrorMsg(fmt.Errorf("no focus area selected"))
+	}
+
+	focusAreaItem, ok := selected.(FocusAreaListItem)
+	if !ok {
+		return m, common.NewErrorMsg(fmt.Errorf("unexpected focus area item type"))
+	}
+
+	return m, tea.Sequence(
+		common.NewEditFocusAreaMsg(focusAreaItem.focusArea),
+		common.AppStateCmd(common.AppStateFocusAreaForm),
+	)
 }
 
 func (m Model) onDelete() (Model, tea.Cmd) {

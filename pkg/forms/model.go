@@ -66,10 +66,12 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m.onKeyMsg(msg)
 
 	case SetFieldValueMsg:
-		for i, field := range m.fields {
-			if field.GetID() == msg.FieldID {
-				m.fields[i].SetValue(msg.Value)
-				break
+		if m.id == msg.FormID {
+			for i, field := range m.fields {
+				if field.GetID() == msg.FieldID {
+					m.fields[i].SetValue(msg.Value)
+					break
+				}
 			}
 		}
 	}

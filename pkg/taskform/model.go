@@ -60,23 +60,14 @@ func (m TaskFormModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	switch msg := msg.(type) {
 	case common.CreateTaskMsg:
-		return m, tea.Sequence(
-			m.onTaskCreate(),
-			m.form.Focus(),
-		)
+		return m, m.onTaskCreate()
 
 	case common.SelectTaskMsg:
-		return m, tea.Sequence(
-			m.onTaskSelect(msg.Task),
-			m.form.Focus(),
-		)
+		return m, m.onTaskSelect(msg.Task)
 
 	case forms.SubmitFormMsg:
 		if msg.FormID == taskFormID {
-			return m, tea.Sequence(
-				m.submitTask(),
-				m.form.Blur(),
-			)
+			return m, m.submitTask()
 		}
 	}
 
@@ -90,11 +81,11 @@ func (m TaskFormModel) View() string {
 }
 
 func (m TaskFormModel) Blur() (tea.Model, tea.Cmd) {
-	return m, nil
+	return m, m.form.Blur()
 }
 
 func (m TaskFormModel) Focus() (tea.Model, tea.Cmd) {
-	return m, nil
+	return m, m.form.Focus()
 }
 
 func (m *TaskFormModel) refreshFocusAreas() tea.Cmd {
@@ -141,9 +132,9 @@ func (m *TaskFormModel) onTaskCreate() tea.Cmd {
 	return tea.Sequence(
 		refreshCmd,
 		tea.Batch(
-			forms.NewSetFieldValueCmd(summaryFieldID, m.task.Summary),
-			forms.NewSetFieldValueCmd(notesFieldID, m.task.Notes),
-			forms.NewSetFieldValueCmd(focusAreaFieldID, strconv.FormatUint(uint64(focusArea.ID), 10)),
+			forms.NewSetFieldValueCmd(taskFormID, summaryFieldID, m.task.Summary),
+			forms.NewSetFieldValueCmd(taskFormID, notesFieldID, m.task.Notes),
+			forms.NewSetFieldValueCmd(taskFormID, focusAreaFieldID, strconv.FormatUint(uint64(focusArea.ID), 10)),
 		),
 	)
 }
@@ -163,9 +154,9 @@ func (m *TaskFormModel) onTaskSelect(task soqapi.TaskDTO) tea.Cmd {
 	return tea.Sequence(
 		refreshCmd,
 		tea.Batch(
-			forms.NewSetFieldValueCmd(summaryFieldID, m.task.Summary),
-			forms.NewSetFieldValueCmd(notesFieldID, m.task.Notes),
-			forms.NewSetFieldValueCmd(focusAreaFieldID, strconv.FormatUint(uint64(task.FocusArea.ID), 10)),
+			forms.NewSetFieldValueCmd(taskFormID, summaryFieldID, m.task.Summary),
+			forms.NewSetFieldValueCmd(taskFormID, notesFieldID, m.task.Notes),
+			forms.NewSetFieldValueCmd(taskFormID, focusAreaFieldID, strconv.FormatUint(uint64(task.FocusArea.ID), 10)),
 		),
 	)
 }
@@ -200,7 +191,7 @@ func (m *TaskFormModel) createTask(summary, notes string, focusAreaID uint) erro
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 
-	dto := soqapi.CreateTaskRequestDto{
+	dto := soqapi.CreateTaskRequestDTO{
 		Summary:     summary,
 		Notes:       notes,
 		FocusAreaID: focusAreaID,
@@ -218,7 +209,7 @@ func (m *TaskFormModel) updateTask(summary, notes string, focusAreaID uint) erro
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 
-	dto := soqapi.UpdateTaskRequestDto{
+	dto := soqapi.UpdateTaskRequestDTO{
 		Summary:     summary,
 		Notes:       notes,
 		FocusAreaID: focusAreaID,
