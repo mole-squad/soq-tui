@@ -386,7 +386,6 @@ func (c *Client) ListFocusAreas(ctx context.Context) ([]soqapi.FocusAreaDTO, err
 		return nil, fmt.Errorf("error unmarshalling list focus areas response: %w", err)
 	}
 
-	slog.Info("focus areas", "count", len(focusAreasResp))
 	return focusAreasResp, nil
 }
 
