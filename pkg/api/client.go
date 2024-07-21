@@ -148,11 +148,10 @@ func (c *Client) UpdateTask(ctx context.Context, taskID uint, t *soqapi.UpdateTa
 	return task, nil
 }
 
-// TODO fix resp status code
 func (c *Client) ResolveTask(ctx context.Context, taskID uint) (soqapi.TaskDTO, error) {
 	var task soqapi.TaskDTO
 
-	err := c.doRequest(ctx, http.MethodPost, fmt.Sprintf("/tasks/%d/resolve", taskID), nil, &task)
+	err := c.doRequest(ctx, http.MethodPatch, fmt.Sprintf("/tasks/%d/resolve", taskID), nil, &task)
 	if err != nil {
 		return task, fmt.Errorf("error resolving task: %w", err)
 	}
