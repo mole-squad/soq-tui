@@ -392,9 +392,13 @@ func (c *Client) ListFocusAreas(ctx context.Context) ([]soqapi.FocusAreaDTO, err
 func (c *Client) CreateFocusArea(ctx context.Context, f *soqapi.CreateFocusAreaRequestDTO) (soqapi.FocusAreaDTO, error) {
 	var focusArea soqapi.FocusAreaDTO
 
-	err := c.doRequest(ctx, http.MethodPost, "/focusareas", f, &focusArea)
+	res, err := c.doRequest(ctx, http.MethodPost, "/focusareas", f, &focusArea)
 	if err != nil {
 		return focusArea, fmt.Errorf("error creating focus area: %w", err)
+	}
+
+	if res.StatusCode != http.StatusCreated {
+		return focusArea, fmt.Errorf("unexpected status code: %d", res.StatusCode)
 	}
 
 	return focusArea, nil
@@ -403,9 +407,13 @@ func (c *Client) CreateFocusArea(ctx context.Context, f *soqapi.CreateFocusAreaR
 func (c *Client) UpdateFocusArea(ctx context.Context, focusAreaID uint, f *soqapi.UpdateFocusAreaRequestDTO) (soqapi.FocusAreaDTO, error) {
 	var focusArea soqapi.FocusAreaDTO
 
-	err := c.doRequest(ctx, http.MethodPatch, fmt.Sprintf("/focusareas/%d", focusAreaID), f, &focusArea)
+	res, err := c.doRequest(ctx, http.MethodPatch, fmt.Sprintf("/focusareas/%d", focusAreaID), f, &focusArea)
 	if err != nil {
 		return focusArea, fmt.Errorf("error updating focus area: %w", err)
+	}
+
+	if res.StatusCode != http.StatusOK {
+		return focusArea, fmt.Errorf("unexpected status code: %d", res.StatusCode)
 	}
 
 	return focusArea, nil
@@ -444,7 +452,7 @@ func (c *Client) DeleteFocusArea(ctx context.Context, focusAreaID uint) error {
 	return nil
 }
 
-func (c *Client) doRequest(ctx context.Context, method, path string, dto interface{}, respBody interface{}) error {
+func (c *Client) doRequest(ctx context.Context, method, path string, dto interface{}, respBody interface{}) (*http.Response, error) {
 	var body *bytes.Buffer
 
 	reqUrl := url.URL{
@@ -456,7 +464,7 @@ func (c *Client) doRequest(ctx context.Context, method, path string, dto interfa
 	if dto != nil {
 		serializedDto, err := json.Marshal(dto)
 		if err != nil {
-			return fmt.Errorf("error marshalling request: %w", err)
+			return nil, fmt.Errorf("error marshalling request: %w", err)
 		}
 
 		body = bytes.NewBuffer(serializedDto)
@@ -464,7 +472,7 @@ func (c *Client) doRequest(ctx context.Context, method, path string, dto interfa
 
 	req, err := http.NewRequestWithContext(ctx, method, reqUrl.String(), body)
 	if err != nil {
-		return fmt.Errorf("error building request: %w", err)
+		return nil, fmt.Errorf("error building request: %w", err)
 	}
 
 	req.Header = c.buildHeaders()
@@ -472,30 +480,30 @@ func (c *Client) doRequest(ctx context.Context, method, path string, dto interfa
 
 	res, err := c.httpClient.Do(req)
 	if err != nil {
-		return fmt.Errorf("error executing request: %w", err)
+		return nil, fmt.Errorf("error executing request: %w", err)
 	}
 
 	defer res.Body.Close()
 
 	if res.StatusCode == http.StatusUnauthorized {
 		c.ClearToken()
-		return fmt.Errorf("unauthorized")
-	}
-
-	if respBody == nil {
-		return nil
+		return nil, fmt.Errorf("unauthorized")
 	}
 
 	respBytes, err := io.ReadAll(res.Body)
 	if err != nil {
-		return fmt.Errorf("error reading response: %w", err)
+		return nil, fmt.Errorf("error reading response: %w", err)
+	}
+
+	if len(respBytes) == 0 {
+		return res, nil
 	}
 
 	if err = json.Unmarshal(respBytes, respBody); err != nil {
-		return fmt.Errorf("error unmarshalling response: %w", err)
+		return nil, fmt.Errorf("error unmarshalling response: %w", err)
 	}
 
-	return nil
+	return res, nil
 }
 
 func (c *Client) buildHeaders() http.Header {
