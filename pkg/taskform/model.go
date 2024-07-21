@@ -3,7 +3,6 @@ package taskform
 import (
 	"context"
 	"fmt"
-	"log/slog"
 	"strconv"
 	"time"
 
@@ -12,6 +11,7 @@ import (
 	"github.com/mole-squad/soq-tui/pkg/api"
 	"github.com/mole-squad/soq-tui/pkg/common"
 	"github.com/mole-squad/soq-tui/pkg/forms"
+	"github.com/mole-squad/soq-tui/pkg/logger"
 	"github.com/mole-squad/soq-tui/pkg/utils"
 )
 
@@ -24,6 +24,7 @@ const (
 
 type TaskFormModel struct {
 	client *api.Client
+	logger *logger.Logger
 
 	isNewTask bool
 	task      soqapi.TaskDTO
@@ -33,7 +34,7 @@ type TaskFormModel struct {
 	form forms.Model
 }
 
-func NewTaskFormModel(client *api.Client) common.AppView {
+func NewTaskFormModel(logger *logger.Logger, client *api.Client) common.AppView {
 	summary := forms.NewTextInput(summaryFieldID, "Summary")
 	notes := forms.NewTextInput(notesFieldID, "Notes")
 	focusArea := forms.NewSelectInput(focusAreaFieldID, "Focus Area")
@@ -47,6 +48,7 @@ func NewTaskFormModel(client *api.Client) common.AppView {
 
 	return TaskFormModel{
 		client: client,
+		logger: logger,
 		form:   form,
 	}
 }
@@ -89,7 +91,7 @@ func (m TaskFormModel) Focus() (tea.Model, tea.Cmd) {
 }
 
 func (m *TaskFormModel) refreshFocusAreas() tea.Cmd {
-	slog.Debug("Refreshing focus areas")
+	m.logger.Debug("Refreshing focus areas")
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
@@ -99,7 +101,7 @@ func (m *TaskFormModel) refreshFocusAreas() tea.Cmd {
 		return common.NewErrorMsg(fmt.Errorf("error fetching focus areas: %w", err))
 	}
 
-	slog.Debug("Focus areas fetched", "count", len(focusAreas))
+	m.logger.Debug("Focus areas fetched", "count", len(focusAreas))
 
 	var opts = make([]forms.SelectOption, len(focusAreas))
 	for i, fa := range focusAreas {
@@ -114,7 +116,7 @@ func (m *TaskFormModel) refreshFocusAreas() tea.Cmd {
 func (m *TaskFormModel) onTaskCreate() tea.Cmd {
 	refreshCmd := m.refreshFocusAreas()
 
-	slog.Debug("Creating new task")
+	m.logger.Debug("Creating new task")
 
 	if len(m.focusareas) == 0 {
 		return common.NewErrorMsg(fmt.Errorf("no focus areas available"))
@@ -142,7 +144,7 @@ func (m *TaskFormModel) onTaskCreate() tea.Cmd {
 func (m *TaskFormModel) onTaskSelect(task soqapi.TaskDTO) tea.Cmd {
 	refreshCmd := m.refreshFocusAreas()
 
-	slog.Debug("Editing task", "task", task)
+	m.logger.Debug("Editing task", "task", task)
 
 	if len(m.focusareas) == 0 {
 		return common.NewErrorMsg(fmt.Errorf("no focus areas available"))
@@ -180,7 +182,7 @@ func (m *TaskFormModel) submitTask() tea.Cmd {
 	}
 
 	if err != nil {
-		slog.Error("Error submitting task", "error", err)
+		m.logger.Error("Error submitting task", "error", err)
 		return common.NewErrorMsg(err)
 	}
 

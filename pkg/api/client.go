@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log/slog"
 	"net/http"
 	"net/url"
 	"os"
@@ -16,16 +15,20 @@ import (
 
 	soqapi "github.com/mole-squad/soq-api/api"
 	"github.com/mole-squad/soq-tui/pkg/config"
+	"github.com/mole-squad/soq-tui/pkg/logger"
 )
 
 type Client struct {
 	apiHost    string
 	httpClient *http.Client
+	logger     *logger.Logger
+
+	configDir string
 
 	token string
 }
 
-func NewClient() *Client {
+func NewClient(logger *logger.Logger, configDir string) *Client {
 	apiHost := config.APIHost
 
 	c := &http.Client{
@@ -34,6 +37,8 @@ func NewClient() *Client {
 
 	return &Client{
 		apiHost:    apiHost,
+		logger:     logger,
+		configDir:  configDir,
 		httpClient: c,
 	}
 }
@@ -48,7 +53,7 @@ func (c *Client) LoadToken() error {
 	data, err := os.ReadFile(tokenFilePath)
 	if err != nil {
 		if os.IsNotExist(err) {
-			slog.Debug("token file does not exist")
+			c.logger.Debug("token file does not exist")
 			return nil
 		}
 
@@ -126,8 +131,6 @@ func (c *Client) ListTasks(ctx context.Context) ([]soqapi.TaskDTO, error) {
 
 func (c *Client) CreateTask(ctx context.Context, t *soqapi.CreateTaskRequestDTO) (soqapi.TaskDTO, error) {
 	var task soqapi.TaskDTO
-
-	slog.Info("create task", "dto", t)
 
 	err := c.doRequest(ctx, http.MethodPost, "/tasks", t, &task)
 	if err != nil {
@@ -214,7 +217,7 @@ func (c *Client) doRequest(ctx context.Context, method, path string, dto interfa
 	var req *http.Request
 	var err error
 
-	slog.Debug("Request", "method", method, "url", path)
+	c.logger.Debug("Request", "method", method, "url", path)
 
 	reqUrl := url.URL{
 		Scheme: "http",
@@ -301,10 +304,5 @@ func (c *Client) buildHeaders() http.Header {
 }
 
 func (c *Client) getTokenFilePath() (string, error) {
-	homeDir, err := os.UserHomeDir()
-	if err != nil {
-		return "", fmt.Errorf("error getting user home directory: %w", err)
-	}
-
-	return filepath.Join(homeDir, ".soq", "token"), nil
+	return filepath.Join(c.configDir, "token"), nil
 }

@@ -9,6 +9,7 @@ import (
 	"github.com/mole-squad/soq-tui/pkg/api"
 	"github.com/mole-squad/soq-tui/pkg/common"
 	"github.com/mole-squad/soq-tui/pkg/forms"
+	"github.com/mole-squad/soq-tui/pkg/logger"
 	"github.com/mole-squad/soq-tui/pkg/utils"
 )
 
@@ -19,6 +20,7 @@ const (
 
 type Model struct {
 	client *api.Client
+	logger *logger.Logger
 
 	isNew     bool
 	focusArea soqapi.FocusAreaDTO
@@ -26,7 +28,7 @@ type Model struct {
 	form forms.Model
 }
 
-func New(client *api.Client) common.AppView {
+func New(logger *logger.Logger, client *api.Client) common.AppView {
 	name := forms.NewTextInput(nameFieldID, "Name")
 
 	form := forms.NewFormModel(
@@ -36,6 +38,7 @@ func New(client *api.Client) common.AppView {
 
 	return Model{
 		client: client,
+		logger: logger,
 		form:   form,
 	}
 }
