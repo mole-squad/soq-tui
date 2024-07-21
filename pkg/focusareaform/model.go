@@ -31,7 +31,7 @@ type Model struct {
 func New(logger *logger.Logger, client *api.Client) common.AppView {
 	name := forms.NewTextInput(nameFieldID, "Name")
 
-	form := forms.NewFormModel(
+	form := forms.New(
 		focusAreaFormID,
 		forms.WithField(name),
 	)

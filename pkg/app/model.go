@@ -23,7 +23,7 @@ var (
 	errorStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("241"))
 )
 
-type AppModel struct {
+type Model struct {
 	client *api.Client
 
 	logger *logger.Logger
@@ -42,10 +42,10 @@ type AppModel struct {
 	width    int
 }
 
-type AppModelOption func(*AppModel)
+type AppModelOption func(*Model)
 
-func NewAppModel(opts ...AppModelOption) AppModel {
-	model := AppModel{
+func New(opts ...AppModelOption) Model {
+	model := Model{
 		appState: common.AppStateLoading,
 		debug:    false,
 		keys:     newKeyMap(),
@@ -55,7 +55,7 @@ func NewAppModel(opts ...AppModelOption) AppModel {
 		opt(&model)
 	}
 
-	model.logger = logger.NewLogger(model.debug)
+	model.logger = logger.New(model.debug)
 	model.client = api.NewClient(model.logger, model.configDir)
 
 	err := model.client.LoadToken()
@@ -65,21 +65,21 @@ func NewAppModel(opts ...AppModelOption) AppModel {
 
 	model.views = map[common.AppState]common.AppView{
 		common.AppStateLoading: NewLoadingModel(),
-		common.AppStateLogin:   loginform.NewLoginFormModel(model.logger, model.client),
+		common.AppStateLogin:   loginform.New(model.logger, model.client),
 
 		common.AppStateFocusAreaList: focusarealist.New(model.logger, model.client),
 		common.AppStateFocusAreaForm: focusareaform.New(model.logger, model.client),
 
-		common.AppStateTaskList: tasklist.NewTaskListModel(model.logger, model.client),
-		common.AppStateTaskForm: taskform.NewTaskFormModel(model.logger, model.client),
+		common.AppStateTaskList: tasklist.New(model.logger, model.client),
+		common.AppStateTaskForm: taskform.New(model.logger, model.client),
 
-		common.AppStateSettings: settings.NewSettingsModel(model.logger, model.client),
+		common.AppStateSettings: settings.New(model.logger, model.client),
 	}
 
 	return model
 }
 
-func (m AppModel) Init() tea.Cmd {
+func (m Model) Init() tea.Cmd {
 	var cmds []tea.Cmd
 
 	for _, view := range m.views {
@@ -96,7 +96,7 @@ func (m AppModel) Init() tea.Cmd {
 	return tea.Sequence(initCmd, navCmd)
 }
 
-func (m AppModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	// TODO add global back control
 	switch msg := msg.(type) {
 
@@ -128,11 +128,11 @@ func (m AppModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m.applyUpdates(msg)
 }
 
-func (m AppModel) View() string {
+func (m Model) View() string {
 	return styles.PageWrapperStyle.Render(m.renderContent())
 }
 
-func (m AppModel) renderContent() string {
+func (m Model) renderContent() string {
 	if m.quitting {
 		return "Bye!\n"
 	}
@@ -144,7 +144,7 @@ func (m AppModel) renderContent() string {
 	return m.views[m.appState].View()
 }
 
-func (m AppModel) onAppStateMsg(msg common.AppStateMsg) (tea.Model, tea.Cmd) {
+func (m Model) onAppStateMsg(msg common.AppStateMsg) (tea.Model, tea.Cmd) {
 	var (
 		blurCmd  tea.Cmd
 		focusCmd tea.Cmd
@@ -161,7 +161,7 @@ func (m AppModel) onAppStateMsg(msg common.AppStateMsg) (tea.Model, tea.Cmd) {
 	return m, utils.SequenceIfNotNil(blurCmd, focusCmd)
 }
 
-func (m AppModel) applyUpdates(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m Model) applyUpdates(msg tea.Msg) (tea.Model, tea.Cmd) {
 	cmds := make([]tea.Cmd, 0)
 
 	for key, view := range m.views {
@@ -171,7 +171,7 @@ func (m AppModel) applyUpdates(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, utils.BatchIfNotNil(cmds...)
 }
 
-func (m AppModel) onWindowSizeMsg(msg tea.WindowSizeMsg) (tea.Model, tea.Cmd) {
+func (m Model) onWindowSizeMsg(msg tea.WindowSizeMsg) (tea.Model, tea.Cmd) {
 	docFrameWidth, docFrameHeight := styles.PageWrapperStyle.GetFrameSize()
 
 	m.width = msg.Width
@@ -184,7 +184,7 @@ func (m AppModel) onWindowSizeMsg(msg tea.WindowSizeMsg) (tea.Model, tea.Cmd) {
 	return m.applyUpdates(wrappedMsg)
 }
 
-func (m AppModel) onKeyMsg(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+func (m Model) onKeyMsg(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	switch {
 	case key.Matches(msg, m.keys.Quit):
 		return m, tea.Quit
@@ -197,13 +197,13 @@ func (m AppModel) onKeyMsg(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 }
 
 func WithConfigDir(dir string) AppModelOption {
-	return func(m *AppModel) {
+	return func(m *Model) {
 		m.configDir = dir
 	}
 }
 
 func WithDebugMode(debug bool) AppModelOption {
-	return func(m *AppModel) {
+	return func(m *Model) {
 		m.debug = debug
 	}
 }

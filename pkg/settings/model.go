@@ -11,7 +11,7 @@ import (
 	"github.com/mole-squad/soq-tui/pkg/styles"
 )
 
-type SettingsModel struct {
+type Model struct {
 	client *api.Client
 	logger *logger.Logger
 
@@ -21,8 +21,8 @@ type SettingsModel struct {
 	width int
 }
 
-func NewSettingsModel(logger *logger.Logger, client *api.Client) common.AppView {
-	return SettingsModel{
+func New(logger *logger.Logger, client *api.Client) common.AppView {
+	return Model{
 		client: client,
 		logger: logger,
 		help:   help.New(),
@@ -30,11 +30,11 @@ func NewSettingsModel(logger *logger.Logger, client *api.Client) common.AppView 
 	}
 }
 
-func (m SettingsModel) Init() tea.Cmd {
+func (m Model) Init() tea.Cmd {
 	return nil
 }
 
-func (m SettingsModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
 		return m.onWindowMsg(msg)
@@ -46,7 +46,7 @@ func (m SettingsModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
-func (m SettingsModel) View() string {
+func (m Model) View() string {
 	sections := make([]string, 0)
 
 	helpContent := m.help.View(m.keys)
@@ -56,15 +56,15 @@ func (m SettingsModel) View() string {
 	return styles.PageWrapperStyle.Render(lipgloss.JoinVertical(lipgloss.Left, sections...))
 }
 
-func (m SettingsModel) Blur() (tea.Model, tea.Cmd) {
+func (m Model) Blur() (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
-func (m SettingsModel) Focus() (tea.Model, tea.Cmd) {
+func (m Model) Focus() (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
-func (m SettingsModel) onWindowMsg(msg tea.WindowSizeMsg) (SettingsModel, tea.Cmd) {
+func (m Model) onWindowMsg(msg tea.WindowSizeMsg) (Model, tea.Cmd) {
 	m.width = msg.Width
 
 	m.help.Width = msg.Width
@@ -72,7 +72,7 @@ func (m SettingsModel) onWindowMsg(msg tea.WindowSizeMsg) (SettingsModel, tea.Cm
 	return m, nil
 }
 
-func (m SettingsModel) onKeyMsg(msg tea.KeyMsg) (SettingsModel, tea.Cmd) {
+func (m Model) onKeyMsg(msg tea.KeyMsg) (Model, tea.Cmd) {
 	switch {
 	case key.Matches(msg, m.keys.Back):
 		return m, common.AppStateCmd(common.AppStateTaskList)

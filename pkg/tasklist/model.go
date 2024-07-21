@@ -14,11 +14,7 @@ import (
 	"github.com/mole-squad/soq-tui/pkg/logger"
 )
 
-type taskLoadMsg struct {
-	tasks []soqapi.TaskDTO
-}
-
-type TaskListModel struct {
+type Model struct {
 	client  *api.Client
 	logger  *logger.Logger
 	tasks   []soqapi.TaskDTO
@@ -26,7 +22,7 @@ type TaskListModel struct {
 	teaList list.Model
 }
 
-func NewTaskListModel(logger *logger.Logger, client *api.Client) common.AppView {
+func New(logger *logger.Logger, client *api.Client) common.AppView {
 	listKeys := newKeyMap()
 
 	teaList := list.New([]list.Item{}, list.NewDefaultDelegate(), 0, 0)
@@ -51,7 +47,7 @@ func NewTaskListModel(logger *logger.Logger, client *api.Client) common.AppView 
 		}
 	}
 
-	return TaskListModel{
+	return Model{
 		client:  client,
 		logger:  logger,
 		keys:    listKeys,
@@ -59,11 +55,11 @@ func NewTaskListModel(logger *logger.Logger, client *api.Client) common.AppView 
 	}
 }
 
-func (m TaskListModel) Init() tea.Cmd {
+func (m Model) Init() tea.Cmd {
 	return nil
 }
 
-func (m TaskListModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
 		m.teaList.SetSize(msg.Width, msg.Height)
@@ -78,19 +74,19 @@ func (m TaskListModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, cmd
 }
 
-func (m TaskListModel) View() string {
+func (m Model) View() string {
 	return m.teaList.View()
 }
 
-func (m TaskListModel) Blur() (tea.Model, tea.Cmd) {
+func (m Model) Blur() (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
-func (m TaskListModel) Focus() (tea.Model, tea.Cmd) {
+func (m Model) Focus() (tea.Model, tea.Cmd) {
 	return m.refreshTasks()
 }
 
-func (m TaskListModel) refreshTasks() (TaskListModel, tea.Cmd) {
+func (m Model) refreshTasks() (Model, tea.Cmd) {
 	tasks, err := m.getTasks()
 	if err != nil {
 		return m, common.NewErrorMsg(err)
@@ -107,7 +103,7 @@ func (m TaskListModel) refreshTasks() (TaskListModel, tea.Cmd) {
 	return m, m.teaList.SetItems(newItems)
 }
 
-func (m TaskListModel) getTasks() ([]soqapi.TaskDTO, error) {
+func (m Model) getTasks() ([]soqapi.TaskDTO, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 
@@ -119,7 +115,7 @@ func (m TaskListModel) getTasks() ([]soqapi.TaskDTO, error) {
 	return tasks, nil
 }
 
-func (m TaskListModel) onKeyMsg(msg tea.KeyMsg) (TaskListModel, tea.Cmd) {
+func (m Model) onKeyMsg(msg tea.KeyMsg) (Model, tea.Cmd) {
 	switch {
 	case key.Matches(msg, m.keys.New):
 		return m, tea.Sequence(
@@ -146,7 +142,7 @@ func (m TaskListModel) onKeyMsg(msg tea.KeyMsg) (TaskListModel, tea.Cmd) {
 	return m, cmd
 }
 
-func (m TaskListModel) onEditTask() (TaskListModel, tea.Cmd) {
+func (m Model) onEditTask() (Model, tea.Cmd) {
 	selected := m.teaList.SelectedItem()
 	if selected == nil {
 		return m, common.NewErrorMsg(fmt.Errorf("no task selected"))
@@ -163,7 +159,7 @@ func (m TaskListModel) onEditTask() (TaskListModel, tea.Cmd) {
 	)
 }
 
-func (m TaskListModel) onDeleteTask() (TaskListModel, tea.Cmd) {
+func (m Model) onDeleteTask() (Model, tea.Cmd) {
 	selected := m.teaList.SelectedItem()
 	if selected == nil {
 		return m, common.NewErrorMsg(fmt.Errorf("no task selected"))
@@ -182,7 +178,7 @@ func (m TaskListModel) onDeleteTask() (TaskListModel, tea.Cmd) {
 	return m.refreshTasks()
 }
 
-func (m TaskListModel) onResolveTask() (TaskListModel, tea.Cmd) {
+func (m Model) onResolveTask() (Model, tea.Cmd) {
 	selected := m.teaList.SelectedItem()
 	if selected == nil {
 		return m, common.NewErrorMsg(fmt.Errorf("no task selected"))
